@@ -1,0 +1,270 @@
+﻿@model Nop.Plugin.Payments.TodoPago.Models.StatusModel
+@using Nop.Web.Framework;
+@{
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="content-header clearfix">
+        <h1 class="pull-left">@T("Plugins.Payments.TodoPago.Fields.OrderStatus")</h1>
+    </div>
+
+    <div class="content">
+        <div class="form-horizontal">
+            <div class="panel-group">
+                <div class="panel panel-default panel-search">
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-hover table-bordered" style="max-width: 500px;">
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.ResultCode")
+                                            </td>
+                                            <td>
+                                                @Model.RESULTCODE
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.DateTime")
+                                            </td>
+                                            <td>
+                                                @Model.DATETIME
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.OperationId")
+                                            </td>
+                                            <td>
+                                                @Model.OPERATIONID
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.CurrencyCode")
+                                            </td>
+                                            <td>
+                                                @Model.CURRENCYCODE
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.Amount")
+                                            </td>
+                                            <td>
+                                                @Model.AMOUNT
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.Type")
+                                            </td>
+                                            <td>
+                                                @Model.TYPE
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.InstallmentPayments")
+                                            </td>
+                                            <td>
+                                                @Model.INSTALLMENTPAYMENTS
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.CustomerEmail")
+                                            </td>
+                                            <td>
+                                                @Model.CUSTOMEREMAIL
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.IdentificatioType")
+                                            </td>
+                                            <td>
+                                                @Model.IDENTIFICATIONTYPE
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.Identification")
+                                            </td>
+                                            <td>
+                                                @Model.IDENTIFICATION
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.CardNumber")
+                                            </td>
+                                            <td>
+                                                @Model.CARDNUMBER
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.CardHolderName")
+                                            </td>
+                                            <td>
+                                                @Model.CARDHOLDERNAME
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.TicketNumber")
+                                            </td>
+                                            <td>
+                                                @Model.TICKETNUMBER
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.AuthorizationCode")
+                                            </td>
+                                            <td>
+                                                @Model.AUTHORIZATIONCODE
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-hover table-bordered" style="max-width: 500px;">
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.BarCode")
+                                            </td>
+                                            <td>
+                                                @Model.BARCODE
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.CouponExpDate")
+                                            </td>
+                                            <td>
+                                                @Model.COUPONEXPDATE
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.CouponSecexpDate")
+                                            </td>
+                                            <td>
+                                                @Model.COUPONSECEXPDATE
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.CouponSubscriber")
+                                            </td>
+                                            <td>
+                                                @Model.COUPONSUBSCRIBER
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.BankId")
+                                            </td>
+                                            <td>
+                                                @Model.BANKID
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.PaymentMethodType")
+                                            </td>
+                                            <td>
+                                                @Model.PAYMENTMETHODTYPE
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.PaymentMethodCode")
+                                            </td>
+                                            <td>
+                                                @Model.PAYMENTMETHODCODE
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.PromotionId")
+                                            </td>
+                                            <td>
+                                                @Model.PROMOTIONID
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.AmountBuyer")
+                                            </td>
+                                            <td>
+                                                @Model.AMOUNTBUYER
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.PaymentMethodName")
+                                            </td>
+                                            <td>
+                                                @Model.PAYMENTMETHODNAME
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.PushNotifyEndpoint")
+                                            </td>
+                                            <td>
+                                                @Model.PUSHNOTIFYENDPOINT
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.PushNotifyMethod")
+                                            </td>
+                                            <td>
+                                                @Model.PUSHNOTIFYMETHOD
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.PushNotifyStates")
+                                            </td>
+                                            <td>
+                                                @Model.PUSHNOTIFYSTATES
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                @T("Plugins.Payments.TodoPago.Fields.Refunded")
+                                            </td>
+                                            <td>
+                                                @Model.REFUNDED
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+
+
+
+

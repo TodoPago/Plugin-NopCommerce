@@ -1,0 +1,253 @@
+@{
+    Layout = "";
+}
+@model Nop.Plugin.Payments.TodoPago.Models.ConfigurationModel
+@using Nop.Web.Framework;
+@Html.Action("StoreScopeConfiguration", "Setting", new { area = "Admin" })
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <table class="adminContent">
+        <tr>
+            <td colspan="2">
+                <b>@T("Plugins.Payments.TodoPago.Notes")</b>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <p>
+                    <em>TodoPago</em><br /><br />
+
+                    <h4><p style="color:red;">@ViewBag.getDescriptionError</p></h4>
+                    <em>Medio de pago TodoPago</em><br /><br />
+                    <em>Version  del plugin 1.0.0</em><br /><br />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.Titulo_OverrideForStore, model => model.Titulo, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.Titulo):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Titulo)
+                @Html.ValidationMessageFor(model => model.Titulo)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.Descripcion_OverrideForStore, model => model.Descripcion, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.Descripcion):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Descripcion)
+                @Html.ValidationMessageFor(model => model.Descripcion)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.AmbienteId_OverrideForStore, model => model.AmbienteId, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.AmbienteValues):
+            </td>
+            <td class="adminData">
+                @Html.DropDownList("AmbienteId", Model.AmbienteValues)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.SegmentoId_OverrideForStore, model => model.SegmentoId, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.SegmentoValues):
+            </td>
+            <td class="adminData">
+                @Html.DropDownList("SegmentoId", Model.SegmentoValues)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.SetCuotas_OverrideForStore, model => model.SetCuotas, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.SetCuotas):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.SetCuotas)
+                @Html.ValidationMessageFor(model => model.SetCuotas)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.MaxCuotasId_OverrideForStore, model => model.MaxCuotasId, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.MaxCuotasValues):
+            </td>
+            <td class="adminData">
+                @Html.DropDownList("MaxCuotasId", Model.MaxCuotasValues)
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <p>
+                    <br />
+                    <em>Credenciales</em><br />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.User_OverrideForStore, model => model.User, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.User):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.User)
+                @Html.ValidationMessageFor(model => model.User)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.Password_OverrideForStore, model => model.Password, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.Password):
+            </td>
+            <td class="adminData">
+                @Html.PasswordFor(model => model.Password, new { @class = "password form-control text-box single-line" })
+                @Html.ValidationMessageFor(model => model.Password)
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <input type="button" id="Todopago_btnCredentials" name="Todopago_btnCredentials" value="@T("Plugins.Payments.TodoPago.BtnCredentials")" class="adminButton" />
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <p>
+                    <br />
+                    <em>Ambiente de Developers</em><br /><br />
+                    <em>Datos correspondientes al ambiente de Developers</em><br /><br />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.ApiKeyDeveloper_OverrideForStore, model => model.ApiKeyDeveloper, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.ApiKeyDeveloper):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.ApiKeyDeveloper)
+                @Html.ValidationMessageFor(model => model.ApiKeyDeveloper)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.SecurityDeveloper_OverrideForStore, model => model.SecurityDeveloper, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.SecurityDeveloper):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.SecurityDeveloper)
+                @Html.ValidationMessageFor(model => model.SecurityDeveloper)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.MerchantDeveloper_OverrideForStore, model => model.MerchantDeveloper, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.MerchantDeveloper):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.MerchantDeveloper)
+                @Html.ValidationMessageFor(model => model.MerchantDeveloper)
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <p>
+                    <br />
+                    <em>Ambiente de Produccion</em><br /><br />
+                    <em>Datos correspondientes al ambiente de produccion</em><br /><br />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.ApiKeyProduction_OverrideForStore, model => model.ApiKeyProduction, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.ApiKeyProduction):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.ApiKeyProduction)
+                @Html.ValidationMessageFor(model => model.ApiKeyProduction)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.SecurityProduction_OverrideForStore, model => model.SecurityProduction, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.SecurityProduction):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.SecurityProduction)
+                @Html.ValidationMessageFor(model => model.SecurityProduction)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.MerchantProduction_OverrideForStore, model => model.MerchantProduction, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.MerchantProduction):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.MerchantProduction)
+                @Html.ValidationMessageFor(model => model.MerchantProduction)
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <p>
+                    <em>Estado de la orden</em><br /><br />
+                    <em>Datos correspondientes al estado de la orden</em><br /><br />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.TransaccionIniciadaId_OverrideForStore, model => model.TransaccionIniciadaId, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.TransaccionIniciadaValues):
+            </td>
+            <td class="adminData">
+                @Html.DropDownList("TransaccionIniciadaId", Model.TransaccionIniciadaValues)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.TransaccionAprobadaId_OverrideForStore, model => model.TransaccionAprobadaId, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.TransaccionAprobadaValues):
+            </td>
+            <td class="adminData">
+                @Html.DropDownList("TransaccionAprobadaId", Model.TransaccionAprobadaValues)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.TransaccionRechazadaId_OverrideForStore, model => model.TransaccionRechazadaId, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.TransaccionRechazadaValues):
+            </td>
+            <td class="adminData">
+                @Html.DropDownList("TransaccionRechazadaId", Model.TransaccionRechazadaValues)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.TransaccionOfflineId_OverrideForStore, model => model.TransaccionOfflineId, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.TransaccionOfflineValues):
+            </td>
+            <td class="adminData">
+                @Html.DropDownList("TransaccionOfflineId", Model.TransaccionOfflineValues)
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <input type="submit" name="save" class="k-button" value="@T("Admin.Common.Save")" />
+            </td>
+        </tr>
+    </table>
+
+    <script type="text/javascript">
+        var rootPath = "@Url.Content("~")";
+    </script>
+
+    <script src="@Url.Content("~/Plugins/Payments.TodoPago/Scripts/TodoPago.js")"></script>
+}
