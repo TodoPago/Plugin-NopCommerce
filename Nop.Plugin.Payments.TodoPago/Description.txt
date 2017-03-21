@@ -1,7 +1,7 @@
 ﻿Group: Payment methods
 FriendlyName: TodoPago
 SystemName: Payments.TodoPago
-Version: 1.0
+Version: 1.0.1
 SupportedVersions: 3.60, 3.70, 3.80
 Author: TodoPago team
 DisplayOrder: 1

@@ -161,8 +161,8 @@ namespace Nop.Plugin.Payments.TodoPago.Services
 
             String result = "description";
 
-            if (description.Equals(String.Empty)) {
-                if (shortDescription.Equals(String.Empty)) {
+            if (String.IsNullOrEmpty(description)) {
+                if (String.IsNullOrEmpty(shortDescription)) {
                     result = name;
                 } else {
                     result = shortDescription;
