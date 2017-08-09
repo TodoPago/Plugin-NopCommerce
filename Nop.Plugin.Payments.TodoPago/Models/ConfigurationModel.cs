@@ -18,7 +18,7 @@ namespace Nop.Plugin.Payments.TodoPago.Models
         public string Descripcion { get; set; }
         public bool Descripcion_OverrideForStore { get; set; }
 
-        public int  AmbienteId { get; set; }
+        public int AmbienteId { get; set; }
         public bool AmbienteId_OverrideForStore { get; set; }
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.AmbienteValues")]
         public SelectList AmbienteValues { get; set; }
@@ -46,6 +46,42 @@ namespace Nop.Plugin.Payments.TodoPago.Models
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.MaxCuotasValues")]
         public SelectList MaxCuotasValues { get; set; }
 
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.SetTimeout")]
+        public bool SetTimeout { get; set; }
+        public bool SetTimeout_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.Timeout")]
+        public string Timeout { get; set; }
+        public bool Timeout_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.Chart")]
+        public bool Chart { get; set; }
+        public bool Chart_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.User")]
+        public string UserDev { get; set; }
+        public bool UserDev_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.Password")]
+        public string PasswordDev { get; set; }
+        public bool PasswordDev_OverrideForStore { get; set; }
+
+        //Ambiente Developer
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.ApiKeyDeveloper")]
+        public string ApiKeyDeveloper { get; set; }
+        public bool ApiKeyDeveloper_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.SecurityDeveloper")]
+        public string SecurityDeveloper { get; set; }
+        public bool SecurityDeveloper_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.MerchantDeveloper")]
+        public string MerchantDeveloper { get; set; }
+        public bool MerchantDeveloper_OverrideForStore { get; set; }
+
+
+        //Ambiente Production
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.User")]
         public string User { get; set; }
         public bool User_OverrideForStore { get; set; }
@@ -54,34 +90,18 @@ namespace Nop.Plugin.Payments.TodoPago.Models
         public string Password { get; set; }
         public bool Password_OverrideForStore { get; set; }
 
-        //Ambiente Developer
-
-        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.ApiKeyDeveloper")]
-        public string ApiKeyDeveloper { get; set; }
-        public bool   ApiKeyDeveloper_OverrideForStore { get; set; }  
-
-        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.SecurityDeveloper")]
-        public string SecurityDeveloper { get; set; }
-        public bool   SecurityDeveloper_OverrideForStore { get; set; } 
-
-        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.MerchantDeveloper")]
-        public string MerchantDeveloper { get; set; }
-        public bool   MerchantDeveloper_OverrideForStore { get; set; } 
-
-
-        //Ambiente Production
 
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.ApiKeyProduction")]
         public string ApiKeyProduction { get; set; }
-        public bool ApiKeyProduction_OverrideForStore { get; set; }  
+        public bool ApiKeyProduction_OverrideForStore { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.SecurityProduction")]
         public string SecurityProduction { get; set; }
-        public bool SecurityProduction_OverrideForStore { get; set; } 
+        public bool SecurityProduction_OverrideForStore { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.MerchantProduction")]
         public string MerchantProduction { get; set; }
-        public bool MerchantProduction_OverrideForStore { get; set; } 
+        public bool MerchantProduction_OverrideForStore { get; set; }
 
 
         //Estdos del pedido

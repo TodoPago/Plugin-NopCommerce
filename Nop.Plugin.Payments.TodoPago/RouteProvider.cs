@@ -4,10 +4,10 @@ using Nop.Web.Framework.Mvc.Routes;
 
 namespace Nop.Plugin.Payments.TodoPago
 {
-    public partial class RouteProvider : IRouteProvider{
-
-        public void RegisterRoutes(RouteCollection routes){
-
+    public partial class RouteProvider : IRouteProvider
+    {
+        public void RegisterRoutes(RouteCollection routes)
+        {
             //OrderOk        
             routes.MapRoute("Plugin.Payments.TodoPago.OrderReturn",
                  "Plugins/PaymentTodoPago/OrderReturn",
@@ -43,6 +43,19 @@ namespace Nop.Plugin.Payments.TodoPago
                  new[] { "Nop.Plugin.Payments.TodoPago.Controllers" }
             );
 
+            //Order Status
+            routes.MapRoute("Plugin.Payments.TodoPago.OrderStatusTP",
+                 "Plugins/PaymentTodoPago/OrderStatusTP/{id}/{message}",
+                 new { controller = "PaymentTodoPago", action = "OrderStatusTP", id = "", message = "" },
+                 new[] { "Nop.Plugin.Payments.TodoPago.Controllers" }
+            );
+
+            //Order Status Fail
+            routes.MapRoute("Plugin.Payments.TodoPago.OrderStatusFailTP",
+                 "Plugins/PaymentTodoPago/OrderStatusFailTP/{id}/{message}",
+                 new { controller = "PaymentTodoPago", action = "OrderStatusFailTP", id = "", message = "" },
+                 new[] { "Nop.Plugin.Payments.TodoPago.Controllers" }
+            );
         }
         public int Priority
         {

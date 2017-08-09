@@ -11,7 +11,8 @@ namespace Nop.Plugin.Payments.TodoPago.Data
     public partial class TodoPagoTransactionRecordMap : NopEntityTypeConfiguration<TodoPagoTransactionRecord>
     {
 
-        public TodoPagoTransactionRecordMap() {
+        public TodoPagoTransactionRecordMap()
+        {
 
             this.ToTable("todopago_transaction");
             this.HasKey(x => x.Id);

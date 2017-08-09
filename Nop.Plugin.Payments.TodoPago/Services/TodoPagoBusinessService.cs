@@ -11,7 +11,8 @@ using TodoPagoConnector.Utils;
 
 namespace Nop.Plugin.Payments.TodoPago.Services
 {
-    public class TodoPagoBusinessService {
+    public class TodoPagoBusinessService
+    {
 
         private Dictionary<string, string> stateCodeDictionary;
         private const string TODOPAGO_SAR_ARS = "ARS";
@@ -21,33 +22,39 @@ namespace Nop.Plugin.Payments.TodoPago.Services
 
         private readonly ITodoPagoTransactionService _todoPagoTransactionService;
 
-        public TodoPagoBusinessService(ITodoPagoTransactionService todoPagoTransactionService){
+        public TodoPagoBusinessService(ITodoPagoTransactionService todoPagoTransactionService)
+        {
             this._todoPagoTransactionService = todoPagoTransactionService;
             setState();
         }
 
 
-        public void insertTodoPagoTransactionRecord(TodoPagoTransactionDto todoPagoTransactionDto) {
+        public void insertTodoPagoTransactionRecord(TodoPagoTransactionDto todoPagoTransactionDto)
+        {
             _todoPagoTransactionService.insertTodoPagoTransactionRecord(this.toRecord(todoPagoTransactionDto));
         }
 
-        public TodoPagoTransactionDto findTodoPagoTransactionRecord(int orderId) {
+        public TodoPagoTransactionDto findTodoPagoTransactionRecord(int orderId)
+        {
 
             TodoPagoTransactionDto result = null;
 
-            if (orderId != null) {
+            if (orderId != null)
+            {
                 result = this.toDto(_todoPagoTransactionService.findByOrdenId(orderId));
             }
 
             return result;
         }
 
-        public void updateTodoPagoTransactionRecord(TodoPagoTransactionDto todoPagoTransactionDto){
+        public void updateTodoPagoTransactionRecord(TodoPagoTransactionDto todoPagoTransactionDto)
+        {
 
             TodoPagoTransactionRecord record = _todoPagoTransactionService.findByOrdenId(todoPagoTransactionDto.ordenId);
             //TodoPagoTransactionDto result = findTodoPagoTransactionRecord(todoPagoTransactionDto.ordenId);
 
-            if(record != null){
+            if (record != null)
+            {
 
                 record.secondStep = todoPagoTransactionDto.secondStep;
                 record.paramsGAA = todoPagoTransactionDto.paramsGAA;
@@ -59,7 +66,8 @@ namespace Nop.Plugin.Payments.TodoPago.Services
             }
         }
 
-        public Dictionary<string, string> completePayLoad(Dictionary<string, string> payload, PostProcessPaymentRequest postProcessPaymentRequest) {
+        public Dictionary<string, string> completePayLoad(Dictionary<string, string> payload, PostProcessPaymentRequest postProcessPaymentRequest)
+        {
 
             var orderTotal = Math.Round(postProcessPaymentRequest.Order.OrderTotal, 2);
             String amount = orderTotal.ToString("0.00", CultureInfo.InvariantCulture);
@@ -88,7 +96,8 @@ namespace Nop.Plugin.Payments.TodoPago.Services
             payload.Add("CSMDD11", "");//NO MANDATORIO.
 
             //retail
-            if (postProcessPaymentRequest.Order.PickUpInStore || postProcessPaymentRequest.Order.ShippingStatusId == 10) {
+            if (postProcessPaymentRequest.Order.PickUpInStore || postProcessPaymentRequest.Order.ShippingStatusId == 10)
+            {
                 payload.Add("CSSTCITY", postProcessPaymentRequest.Order.BillingAddress.City); //MANDATORIO.
                 payload.Add("CSSTCOUNTRY", postProcessPaymentRequest.Order.BillingAddress.Country.TwoLetterIsoCode ?? "AR");//MANDATORIO. Código ISO.
                 payload.Add("CSSTEMAIL", postProcessPaymentRequest.Order.BillingAddress.Email); //MANDATORIO.
@@ -101,7 +110,9 @@ namespace Nop.Plugin.Payments.TodoPago.Services
                 payload.Add("CSSTSTREET1", postProcessPaymentRequest.Order.BillingAddress.Address1);//MANDATORIO.
                 payload.Add("CSSTSTREET2", postProcessPaymentRequest.Order.BillingAddress.Address2);//NO MANDATORIO.
 
-            } else{
+            }
+            else
+            {
                 payload.Add("CSSTCITY", postProcessPaymentRequest.Order.ShippingAddress.City); //MANDATORIO.
                 payload.Add("CSSTCOUNTRY", postProcessPaymentRequest.Order.ShippingAddress.Country.TwoLetterIsoCode ?? "AR");//MANDATORIO. Código ISO.
                 payload.Add("CSSTEMAIL", postProcessPaymentRequest.Order.ShippingAddress.Email); //MANDATORIO.
@@ -127,7 +138,8 @@ namespace Nop.Plugin.Payments.TodoPago.Services
 
             var cartItems = postProcessPaymentRequest.Order.OrderItems;
 
-            foreach (var item in cartItems){
+            foreach (var item in cartItems)
+            {
                 csitProductCode.Append(item.ProductId + TODOPAGO_NUMERAL);
                 csitProductDescription.Append(getDescription(item.Product.FullDescription, item.Product.ShortDescription, item.Product.Name) + TODOPAGO_NUMERAL);
                 csitProductName.Append(item.Product.Name + TODOPAGO_NUMERAL);
@@ -154,20 +166,27 @@ namespace Nop.Plugin.Payments.TodoPago.Services
             payload.Add("CSMDD16", "");//NO MANDATORIO.
 
             return payload;
-        
+
         }
 
-        private String getDescription (String description, String shortDescription, String name){
+        private String getDescription(String description, String shortDescription, String name)
+        {
 
             String result = "description";
 
-            if (String.IsNullOrEmpty(description)) {
-                if (String.IsNullOrEmpty(shortDescription)) {
+            if (String.IsNullOrEmpty(description))
+            {
+                if (String.IsNullOrEmpty(shortDescription))
+                {
                     result = name;
-                } else {
+                }
+                else
+                {
                     result = shortDescription;
                 }
-            }else {
+            }
+            else
+            {
                 // result = description;
                 result = shortDescription;
             }
@@ -175,20 +194,25 @@ namespace Nop.Plugin.Payments.TodoPago.Services
             return result;
         }
 
-        private String getSKU(String SKU, String code){
+        private String getSKU(String SKU, String code)
+        {
 
             String result = "SKU";
 
-            if (SKU != null && !SKU.Equals(String.Empty)){
+            if (SKU != null && !SKU.Equals(String.Empty))
+            {
                 result = SKU;
-            }else {
+            }
+            else
+            {
                 result = code;
             }
 
             return result;
         }
 
-        private void setState(){
+        private void setState()
+        {
             this.stateCodeDictionary = new Dictionary<string, string>();
             this.stateCodeDictionary["A"] = "4400";
             this.stateCodeDictionary["B"] = "1900";
@@ -238,12 +262,14 @@ namespace Nop.Plugin.Payments.TodoPago.Services
         //    return this.todoPagoTransactionDto;
         //}
 
-    
-        public String serealizar(Dictionary<string, object> dict){
+
+        public String serealizar(Dictionary<string, object> dict)
+        {
 
             StringBuilder builder = new StringBuilder();
-    
-            foreach (KeyValuePair<string, object> pair in dict){
+
+            foreach (KeyValuePair<string, object> pair in dict)
+            {
                 builder.Append(pair.Key).Append(":").Append(pair.Value).Append(',');
             }
 
@@ -251,16 +277,18 @@ namespace Nop.Plugin.Payments.TodoPago.Services
             result = result.TrimEnd(',');
 
             return result;
-         }
+        }
 
 
 
-        public String serealizar(Dictionary<string, string> dict){
+        public String serealizar(Dictionary<string, string> dict)
+        {
 
             StringBuilder builder = new StringBuilder();
 
-            foreach (KeyValuePair<string, string> pair in dict) {
-                 builder.Append(pair.Key).Append(":").Append(pair.Value).Append(',');
+            foreach (KeyValuePair<string, string> pair in dict)
+            {
+                builder.Append(pair.Key).Append(":").Append(pair.Value).Append(',');
             }
 
             String result = builder.ToString();
@@ -293,7 +321,8 @@ namespace Nop.Plugin.Payments.TodoPago.Services
             return result;
         }
 
-        public TodoPagoTransactionRecord toRecord (TodoPagoTransactionDto dto) { 
+        public TodoPagoTransactionRecord toRecord(TodoPagoTransactionDto dto)
+        {
 
             TodoPagoTransactionRecord record = new TodoPagoTransactionRecord();
             record.ordenId = dto.ordenId;
@@ -311,9 +340,10 @@ namespace Nop.Plugin.Payments.TodoPago.Services
 
         }
 
-        public TodoPagoTransactionDto toDto(TodoPagoTransactionRecord record) {
+        public TodoPagoTransactionDto toDto(TodoPagoTransactionRecord record)
+        {
 
-            TodoPagoTransactionDto dto = new TodoPagoTransactionDto ();
+            TodoPagoTransactionDto dto = new TodoPagoTransactionDto();
             dto.ordenId = record.ordenId;
             dto.firstStep = record.firstStep;
             dto.paramsSAR = record.paramsSAR;

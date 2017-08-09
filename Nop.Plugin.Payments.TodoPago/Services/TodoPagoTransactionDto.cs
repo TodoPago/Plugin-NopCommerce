@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Nop.Core;
-
 namespace Nop.Plugin.Payments.TodoPago.Services
 {
-    public class TodoPagoTransactionDto {
+    public class TodoPagoTransactionDto
+    {
 
         public int ordenId { get; set; }
 

@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Net;
-using System.Text;
 using System.Web;
 using System.Web.Routing;
-using System.Xml.Linq;
 using Nop.Core;
 using Nop.Web.Framework.Menu;
-using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
@@ -17,7 +12,6 @@ using Nop.Core.Plugins;
 using Nop.Plugin.Payments.TodoPago.Controllers;
 using Nop.Plugin.Payments.TodoPago.Services;
 using Nop.Plugin.Payments.TodoPago.Data;
-using Nop.Plugin.Payments.TodoPago.Domain;
 using Nop.Services.Configuration;
 using Nop.Services.Customers;
 using Nop.Services.Directory;
@@ -30,6 +24,7 @@ using TodoPagoConnector;
 using TodoPagoConnector.Model;
 using TodoPagoConnector.Exceptions;
 using TodoPagoConnector.Utils;
+using Nop.Plugin.Payments.TodoPago.Utils;
 
 
 //using AuthorizeNetSDK = AuthorizeNet;
@@ -40,9 +35,9 @@ namespace Nop.Plugin.Payments.TodoPago
     /// <summary>
     /// AuthorizeNet payment processor
     /// </summary>
-    public class TodoPagoPaymentProcessor : BasePlugin, IPaymentMethod , IAdminMenuPlugin
+    public class TodoPagoPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPlugin
     {
-      
+
         private readonly ISettingService _settingService;
         private readonly ICurrencyService _currencyService;
         private readonly ICustomerService _customerService;
@@ -55,13 +50,12 @@ namespace Nop.Plugin.Payments.TodoPago
         private readonly HttpContextBase _httpContext;
         private readonly ILogger _logger;
         private readonly IOrderService _orderService;
-        private readonly ITodoPagoTransactionService _todoPagoTransactionService;
 
         //TodoPago
         private TPConnector connector;
         private TodoPagoBusinessService todoPagoBusinessService;
         private String merchant;
-        private String security;  
+        private String security;
 
         private const string TODOPAGO_SAR_SESSION = "ABCDEF-1234-12221-FDE1-00000200";
         private const string TODOPAGO_SAR_XML = "XML";
@@ -69,7 +63,7 @@ namespace Nop.Plugin.Payments.TodoPago
         private const string TODOPAGO_SAR_ARS = "ARS";
 
         private const string TODOPAGO_STATUS_CODE = "StatusCode";
-        private const string TODOPAGO_STATUS_MESSAGE= "StatusMessage";
+        private const string TODOPAGO_STATUS_MESSAGE = "StatusMessage";
         private const string TODOPAGO_REQUEST_KEY = "RequestKey";
         private const string TODOPAGO_PUBLIC_REQUEST_KEY = "PublicRequestKey";
         private const string TODOPAGO_URL_REQUEST = "URL_Request";
@@ -86,7 +80,7 @@ namespace Nop.Plugin.Payments.TodoPago
             TodoPagoTransactionObjectContex contex,
             HttpContextBase httpContext,
             ILogger logger,
-            IOrderService  orderService,
+            IOrderService orderService,
             ITodoPagoTransactionService todoPagoTransactionService)
         {
             this._todoPagoPaymentSettings = todoPagoPaymentSettings;
@@ -105,9 +99,11 @@ namespace Nop.Plugin.Payments.TodoPago
         }
 
 
-        public void ManageSiteMap(Nop.Web.Framework.Menu.SiteMapNode rootNode){
+        public void ManageSiteMap(Nop.Web.Framework.Menu.SiteMapNode rootNode)
+        {
 
-            var menuItem = new Nop.Web.Framework.Menu.SiteMapNode() {
+            var menuItem = new Nop.Web.Framework.Menu.SiteMapNode()
+            {
                 SystemName = "TodoPago",
                 Title = "TodoPago",
                 ControllerName = "Plugins/PaymentTodoPago",
@@ -118,23 +114,25 @@ namespace Nop.Plugin.Payments.TodoPago
             };
             //var pluginNode = rootNode.ChildNodes.FirstOrDefault(x => x.SystemName == "Third party plugins");
             //if (pluginNode != null)
-                //pluginNode.ChildNodes.Add(menuItem);
-           // else
-                rootNode.ChildNodes.Add(menuItem);
+            //pluginNode.ChildNodes.Add(menuItem);
+            // else
+            rootNode.ChildNodes.Add(menuItem);
         }
 
-        private void TodoPagoConnectorPrepare(){
+        private void TodoPagoConnectorPrepare()
+        {
             String authorization = string.Empty;
             var headers = new Dictionary<String, String>();
 
-            if(_todoPagoPaymentSettings.Ambiente == Ambiente.Production){
+            if (_todoPagoPaymentSettings.Ambiente == Ambiente.Production)
+            {
                 authorization = _todoPagoPaymentSettings.ApiKeyProduction;
                 this.security = _todoPagoPaymentSettings.SecurityProduction;
                 this.merchant = _todoPagoPaymentSettings.MerchantProduction;
                 headers.Add("Authorization", authorization);
                 this.connector = new TPConnector(TPConnector.productionEndpoint, headers);
-            } 
-            else 
+            }
+            else
             {
                 authorization = _todoPagoPaymentSettings.ApiKeyDeveloper;
                 headers.Add("Authorization", authorization);
@@ -145,7 +143,8 @@ namespace Nop.Plugin.Payments.TodoPago
 
         }
 
-        private  Dictionary<string, Object> TodoPagoFirstStep(PostProcessPaymentRequest postProcessPaymentRequest) {
+        private Dictionary<string, Object> TodoPagoFirstStep(PostProcessPaymentRequest postProcessPaymentRequest)
+        {
 
             String operationId = postProcessPaymentRequest.Order.Id.ToString();
 
@@ -160,7 +159,8 @@ namespace Nop.Plugin.Payments.TodoPago
             result = this.connector.SendAuthorizeRequest(sendAuthorizeRequestParams, sendAuthorizeRequestPayload);
 
             int statusCode = 0;
-            if (result.ContainsKey(TODOPAGO_STATUS_CODE)){
+            if (result.ContainsKey(TODOPAGO_STATUS_CODE))
+            {
                 statusCode = (int)result[TODOPAGO_STATUS_CODE];
             }
             String statusMessage = getValueByKey(result, TODOPAGO_STATUS_MESSAGE);
@@ -169,7 +169,6 @@ namespace Nop.Plugin.Payments.TodoPago
 
             String responseSarSereal = todoPagoBusinessService.serealizar(result);
             _logger.Information("TodoPago ResponseSar : " + responseSarSereal);
-            _logger.Information("TodoPago ResponseSar :" + statusCode + " " + statusMessage);
 
             TodoPagoTransactionDto todoPagoTransactionDto = new TodoPagoTransactionDto();
 
@@ -195,27 +194,41 @@ namespace Nop.Plugin.Payments.TodoPago
             sendAuthorizeRequestParams.Add(ElementNames.MERCHANT, this.merchant);
 
             string URL_OK = String.Empty;
+            string URL_ERROR = String.Empty;
 
-            if (_webHelper.IsCurrentConnectionSecured()) {
-                 URL_OK = _webHelper.GetStoreLocation(true) + "Plugins/PaymentTodoPago/OrderReturn?ordenId=" + operationId + "&";
-            }else {
-                 URL_OK = _webHelper.GetStoreLocation(false) + "Plugins/PaymentTodoPago/OrderReturn?ordenId=" + operationId + "&";
+            if (_webHelper.IsCurrentConnectionSecured())
+            {
+                URL_OK = _webHelper.GetStoreLocation(true) + "Plugins/PaymentTodoPago/OrderReturn?ordenId=" + operationId + "&";
+                if (_todoPagoPaymentSettings.Chart)
+                    URL_ERROR = URL_OK;
+                else
+                    URL_ERROR = _webHelper.GetStoreLocation(true) + "Plugins/PaymentTodoPago/OrderStatusFailTP/" + operationId + "/Ha ocurrido un error al realizar el pago";
+            }
+            else
+            {
+                URL_OK = _webHelper.GetStoreLocation(false) + "Plugins/PaymentTodoPago/OrderReturn?ordenId=" + operationId + "&";
+
+                if (_todoPagoPaymentSettings.Chart)
+                    URL_ERROR = URL_OK;
+                else
+                    URL_ERROR = _webHelper.GetStoreLocation(false) + "Plugins/PaymentTodoPago/OrderStatusFailTP/" + operationId + "/Ha ocurrido un error al realizar el pago";
             }
 
             sendAuthorizeRequestParams.Add(ElementNames.URL_OK, URL_OK);
-            sendAuthorizeRequestParams.Add(ElementNames.URL_ERROR, URL_OK);
+            sendAuthorizeRequestParams.Add(ElementNames.URL_ERROR, URL_ERROR);
             sendAuthorizeRequestParams.Add(ElementNames.ENCODING_METHOD, TODOPAGO_SAR_XML);
 
             return sendAuthorizeRequestParams;
         }
 
 
-        private Dictionary<string, string> generateSendAuthorizeRequestPayload(PostProcessPaymentRequest postProcessPaymentRequest) {
+        private Dictionary<string, string> generateSendAuthorizeRequestPayload(PostProcessPaymentRequest postProcessPaymentRequest)
+        {
 
             Dictionary<string, string> payload = new Dictionary<string, string>();
 
             String operationId = postProcessPaymentRequest.Order.Id.ToString();
-            String mailClient  = postProcessPaymentRequest.Order.BillingAddress.Email;
+            String mailClient = postProcessPaymentRequest.Order.BillingAddress.Email;
 
             var orderTotal = Math.Round(postProcessPaymentRequest.Order.OrderTotal, 2);
             String amount = orderTotal.ToString("0.00", CultureInfo.InvariantCulture);
@@ -226,36 +239,58 @@ namespace Nop.Plugin.Payments.TodoPago
             payload.Add(ElementNames.AMOUNT, amount);
             payload.Add(ElementNames.EMAILCLIENTE, mailClient);
 
-            if (_todoPagoPaymentSettings.SetCuotas) {
-                foreach (int value in Enum.GetValues(typeof(MaxCuotas))){                            
-                    if (((MaxCuotas)value).Equals(_todoPagoPaymentSettings.MaxCuotas)) {
+            if (_todoPagoPaymentSettings.SetCuotas)
+            {
+                foreach (int value in Enum.GetValues(typeof(MaxCuotas)))
+                {
+                    if (((MaxCuotas)value).Equals(_todoPagoPaymentSettings.MaxCuotas))
+                    {
                         payload.Add(ElementNames.MAXINSTALLMENTS, value.ToString());
                     }
                 }
             }
 
-           payload = todoPagoBusinessService.completePayLoad(payload, postProcessPaymentRequest);
-           return payload;
+            if (_todoPagoPaymentSettings.SetTimeout)
+            {
+                if (!String.IsNullOrEmpty(_todoPagoPaymentSettings.Timeout))
+                {
+                    long n;
+
+                    if (Int64.TryParse(_todoPagoPaymentSettings.Timeout, out n))
+                    {
+                        // It's a number!
+                        payload.Add(ElementNames.TIMEOUT, _todoPagoPaymentSettings.Timeout);
+                    }
+                }
+            }
+
+            payload = todoPagoBusinessService.completePayLoad(payload, postProcessPaymentRequest);
+            return payload;
         }
 
-        private string getValueByKey(Dictionary<string, Object> map , String key) {
+        private string getValueByKey(Dictionary<string, Object> map, String key)
+        {
             String result = String.Empty;
 
-            if (map.ContainsKey(key)) {
+            if (map.ContainsKey(key))
+            {
                 result = (String)map[key];
             }
             return result;
         }
-        
-        public Boolean TodoPagoSecondStep (String answerKey, Order order){
+
+        public Boolean TodoPagoSecondStep(String answerKey, Order order)
+        {
 
             Boolean aprobada = false;
             Boolean pagosOffline = false;
+            string amountBuyer = String.Empty;
+            string amount = String.Empty;
 
             TodoPagoConnectorPrepare();
 
             Dictionary<string, Object> result = new Dictionary<string, Object>();
-            Dictionary<string, string> paramsGAA =   generateGAARequestParams(answerKey, order.Id);
+            Dictionary<string, string> paramsGAA = generateGAARequestParams(answerKey, order.Id);
             String paramGAASereal = todoPagoBusinessService.serealizar(paramsGAA);
             _logger.Information("TodoPago ParamsGAA : " + paramGAASereal);
 
@@ -264,34 +299,65 @@ namespace Nop.Plugin.Payments.TodoPago
             _logger.Information("TodoPago ResponseGAA :" + responseGAASereal);
 
             int statusCode = 0;
-            if (result.ContainsKey(TODOPAGO_STATUS_CODE)) {
+            if (result.ContainsKey(TODOPAGO_STATUS_CODE))
+            {
                 statusCode = (int)result[TODOPAGO_STATUS_CODE];
 
                 System.Xml.XmlNode[] aux = (System.Xml.XmlNode[])result["Payload"];
 
-                if (aux != null) {
-                    for (int i = 0; i < aux.Length; i++){
+                if (aux != null)
+                {
+                    for (int i = 0; i < aux.Length; i++)
+                    {
                         System.Xml.XmlNodeList inner = aux[i].ChildNodes;
-                        for (int j = 0; j < inner.Count; j++){
-                            if (inner.Item(j).Name.Equals("ASSOCIATEDDOCUMENTATION")){
+                        for (int j = 0; j < inner.Count; j++)
+                        {
+                            if (inner.Item(j).Name.Equals("ASSOCIATEDDOCUMENTATION"))
+                            {
                                 if (!(inner.Item(j).InnerText.Equals(String.Empty))) { pagosOffline = true; }
                             }
+
+                            if (inner.Item(j).Name.Equals("AMOUNTBUYER"))
+                                amountBuyer = inner.Item(j).InnerText;
+
+                            if (inner.Item(j).Name.Equals("AMOUNT"))
+                                amount = inner.Item(j).InnerText;
 
                         }
                     }
                 }
 
-                if (statusCode == -1){
-                    if (pagosOffline){
+                if (statusCode == -1)
+                {
+                    if (pagosOffline)
+                    {
                         order.OrderStatus = _todoPagoPaymentSettings.TransaccionOffline;
                         order.PaymentStatus = PaymentStatus.Pending;
                         aprobada = true;
-                    }else {
-                    order.OrderStatus = _todoPagoPaymentSettings.TransaccionAprobada;
-                    order.PaymentStatus = PaymentStatus.Paid;
-                    aprobada = true;
                     }
-                }else{
+                    else
+                    {
+                        order.OrderStatus = _todoPagoPaymentSettings.TransaccionAprobada;
+                        order.PaymentStatus = PaymentStatus.Paid;
+
+                        if (!String.IsNullOrEmpty(amountBuyer) && !String.IsNullOrEmpty(amount))
+                        {
+                            //decimal amountValue = Convert.ToDecimal(amount);
+                            decimal amountValue = order.OrderTotal;
+                            decimal amountBuyerValue = Convert.ToDecimal(amountBuyer);
+
+                            order.OrderTotal = amountBuyerValue;
+                            order.OrderSubtotalInclTax = amountBuyerValue;
+                            order.OrderTax += amountBuyerValue - amountValue;
+                            //order.PaymentMethodAdditionalFeeInclTax = amountBuyerValue - amountValue;
+                            //order.PaymentMethodAdditionalFeeExclTax = amountBuyerValue - amountValue;
+                        }
+
+                        aprobada = true;
+                    }
+                }
+                else
+                {
                     order.OrderStatus = _todoPagoPaymentSettings.TransaccionRechazada;
                     order.PaymentStatus = PaymentStatus.Pending;
                     aprobada = false;
@@ -315,7 +381,8 @@ namespace Nop.Plugin.Payments.TodoPago
         }
 
 
-        private Dictionary<string, string> generateGAARequestParams(String answerKey, int orderId) {
+        private Dictionary<string, string> generateGAARequestParams(String answerKey, int orderId)
+        {
 
             Dictionary<string, string> paramsGAA = new Dictionary<string, string>();
 
@@ -323,7 +390,7 @@ namespace Nop.Plugin.Payments.TodoPago
             paramsGAA.Add(ElementNames.SESSION, TODOPAGO_SAR_SESSION);
             paramsGAA.Add(ElementNames.MERCHANT, this.merchant);
             paramsGAA.Add(ElementNames.ANSWERKEY, answerKey);
-      
+
             TodoPagoTransactionDto todoPagoTransactionDto = todoPagoBusinessService.findTodoPagoTransactionRecord(orderId);
 
             if (todoPagoTransactionDto.requestKey != null)
@@ -334,7 +401,8 @@ namespace Nop.Plugin.Payments.TodoPago
             return paramsGAA;
         }
 
-        public User getCredentials(String user, String password, String ambiente) {
+        public User getCredentials(String user, String password, String ambiente)
+        {
 
             if (ambiente.Equals("dev"))
             {
@@ -357,17 +425,19 @@ namespace Nop.Plugin.Payments.TodoPago
         /// </summary>
         /// <param name="processPaymentRequest">Payment info required for an order processing</param>
         /// <returns>Process payment result</returns>
-        public ProcessPaymentResult ProcessPayment(ProcessPaymentRequest processPaymentRequest){
+        public ProcessPaymentResult ProcessPayment(ProcessPaymentRequest processPaymentRequest)
+        {
             var result = new ProcessPaymentResult();
             result.NewPaymentStatus = PaymentStatus.Pending;
             return result;
         }
 
-        
+
         /// <summary>
         /// Post process payment (used by payment ginateways that require redirecting to a third-party URL)
         /// <param name="postProcessPaymentRequest">Payment info required for an order processing</param>
-        public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest){
+        public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
+        {
 
             String urlRedirect = String.Empty;
 
@@ -375,20 +445,52 @@ namespace Nop.Plugin.Payments.TodoPago
             this.TodoPagoConnectorPrepare();
 
             //llamo al first Step, hace el sar
-            Dictionary < string, Object > responseSar = this.TodoPagoFirstStep(postProcessPaymentRequest);
-  
-            if (responseSar.ContainsKey(TODOPAGO_STATUS_CODE)) {
+            Dictionary<string, Object> responseSar = this.TodoPagoFirstStep(postProcessPaymentRequest);
+
+            if (responseSar.ContainsKey(TODOPAGO_STATUS_CODE))
+            {
                 int statusCode = (int)responseSar[TODOPAGO_STATUS_CODE];
                 String urlRequest = getValueByKey(responseSar, TODOPAGO_URL_REQUEST);
 
-                if (!statusCode.Equals(-1)){
+                if (!statusCode.Equals(-1))
+                {
+                    string message = String.Empty;
+
+                    if (responseSar[TODOPAGO_STATUS_MESSAGE] != null && !String.IsNullOrEmpty(responseSar[TODOPAGO_STATUS_MESSAGE].ToString()))
+                        message = responseSar[TODOPAGO_STATUS_MESSAGE].ToString().Replace(".", "");
+
+                    if ((int)responseSar[TODOPAGO_STATUS_CODE] >= 98000 && (int)responseSar[TODOPAGO_STATUS_CODE] < 99000)
+                    {
+                        ErrorMessageCS dictionary = new ErrorMessageCS();
+                        _logger.Information("TodoPago ResponseSar :" + statusCode.ToString() + " " + dictionary.GetErrorInfo((int)responseSar[TODOPAGO_STATUS_CODE]));
+                    }
+
+                    postProcessPaymentRequest.Order.OrderStatus = _todoPagoPaymentSettings.TransaccionRechazada;
+                    postProcessPaymentRequest.Order.PaymentStatus = PaymentStatus.Pending;
+
                     // SAR CON ERRORES
-                    if (_webHelper.IsCurrentConnectionSecured()){
+                    if (_webHelper.IsCurrentConnectionSecured())
+                    {
                         urlRedirect = _webHelper.GetStoreLocation(true);
-                    } else {
+                    }
+                    else
+                    {
                         urlRedirect = _webHelper.GetStoreLocation(false);
                     }
-                } else {
+
+                    if (_todoPagoPaymentSettings.Chart)
+                    {
+                        urlRedirect = urlRedirect + "Plugins/PaymentTodoPago/OrderStatusTP/" + postProcessPaymentRequest.Order.Id.ToString() + "/" + message;
+                    }
+                    else
+                    {
+                        urlRedirect = urlRedirect + "Plugins/PaymentTodoPago/OrderStatusFailTP/" + postProcessPaymentRequest.Order.Id.ToString() + "/" + message;
+                    }
+                    //urlRedirect = urlRedirect + "orderdetails/" + postProcessPaymentRequest.Order.Id.ToString();
+                    
+                }
+                else
+                {
                     // SAR BIEN
                     urlRedirect = urlRequest;
                 }
@@ -428,7 +530,8 @@ namespace Nop.Plugin.Payments.TodoPago
         /// </summary>
         /// <param name="capturePaymentRequest">Capture payment request</param>
         /// <returns>Capture payment result</returns>
-        public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest){
+        public CapturePaymentResult Capture(CapturePaymentRequest capturePaymentRequest)
+        {
             var result = new CapturePaymentResult();
             result.AddError("Capture method not supported");
             return result;
@@ -439,7 +542,8 @@ namespace Nop.Plugin.Payments.TodoPago
         /// </summary>
         /// <param name="refundPaymentRequest">Request</param>
         /// <returns>Result</returns>
-        public RefundPaymentResult Refund(RefundPaymentRequest refundPaymentRequest){
+        public RefundPaymentResult Refund(RefundPaymentRequest refundPaymentRequest)
+        {
 
             var result = new RefundPaymentResult();
 
@@ -450,22 +554,26 @@ namespace Nop.Plugin.Payments.TodoPago
             Dictionary<string, Object> responseRefund = new Dictionary<string, Object>();
             Dictionary<string, Object> response = new Dictionary<string, Object>();
 
-            if (refundPaymentRequest.IsPartialRefund){
-
+            if (refundPaymentRequest.IsPartialRefund)
+            {
                 //String amount = this.GetPesosAmount(refundPaymentRequest.AmountToRefund).ToString("F", new CultureInfo("es-AR"));
 
-                var orderTotal = Math.Round(refundPaymentRequest.AmountToRefund, 2);
+                var amountToRefund = (refundPaymentRequest.AmountToRefund / refundPaymentRequest.Order.OrderTotal) * (refundPaymentRequest.Order.OrderTotal - refundPaymentRequest.Order.OrderTax) ;
+
+                var orderTotal = Math.Round(amountToRefund, 2);
                 String amount = orderTotal.ToString("0.00", CultureInfo.InvariantCulture);
 
                 refundParams = generateReturnRequestParams(refundPaymentRequest.Order.Id, amount);
                 String paramRefund = todoPagoBusinessService.serealizar(refundParams);
                 _logger.Information("TodoPago ParamsRefund : " + paramRefund);
-                
+
                 responseRefund = this.connector.ReturnRequest(refundParams);
                 String resultRefund = todoPagoBusinessService.serealizarRefund(responseRefund);
                 _logger.Information("TodoPago resultRefund : " + resultRefund);
 
-            }else{
+            }
+            else
+            {
                 refundParams = generateVoidRequestParams(refundPaymentRequest.Order.Id);
                 String paramRefund = todoPagoBusinessService.serealizar(refundParams);
                 _logger.Information("TodoPago ParamsRefund : " + paramRefund);
@@ -475,26 +583,35 @@ namespace Nop.Plugin.Payments.TodoPago
                 _logger.Information("TodoPago resultRefund : " + resultRefund);
             }
 
-            if (responseRefund.ContainsKey("VoidResponse")) {
+            if (responseRefund.ContainsKey("VoidResponse"))
+            {
                 response = (Dictionary<string, Object>)responseRefund["VoidResponse"];
             }
 
-            if (responseRefund.ContainsKey("ReturnResponse")) {
+            if (responseRefund.ContainsKey("ReturnResponse"))
+            {
                 response = (Dictionary<string, Object>)responseRefund["ReturnResponse"];
             }
-     
-            if (response.ContainsKey(TODOPAGO_STATUS_CODE)) {
+
+            if (response.ContainsKey(TODOPAGO_STATUS_CODE))
+            {
                 System.Int64 statusCode = (System.Int64)response[TODOPAGO_STATUS_CODE];
 
-                if (!statusCode.Equals(2011)) {
+                if (!statusCode.Equals(2011))
+                {
                     // REFUND CON ERRORES
                     String statusMessage = (String)response[TODOPAGO_STATUS_MESSAGE];
-                    result.AddError(statusCode + " - "  +statusMessage);
-                } else{
+                    result.AddError(statusCode + " - " + statusMessage);
+                }
+                else
+                {
                     // REFUND BIEN
-                    if (refundPaymentRequest.IsPartialRefund && refundPaymentRequest.Order.RefundedAmount + refundPaymentRequest.AmountToRefund < refundPaymentRequest.Order.OrderTotal){
+                    if (refundPaymentRequest.IsPartialRefund && refundPaymentRequest.Order.RefundedAmount + refundPaymentRequest.AmountToRefund < refundPaymentRequest.Order.OrderTotal)
+                    {
                         result.NewPaymentStatus = PaymentStatus.PartiallyRefunded;
-                    } else {
+                    }
+                    else
+                    {
                         result.NewPaymentStatus = PaymentStatus.Refunded;
                     }
                 }
@@ -503,7 +620,8 @@ namespace Nop.Plugin.Payments.TodoPago
             return result;
         }
 
-        private Dictionary<string, string> generateVoidRequestParams(int orderId) {
+        private Dictionary<string, string> generateVoidRequestParams(int orderId)
+        {
 
             Dictionary<string, string> voidRequestParams = new Dictionary<string, string>();
 
@@ -516,11 +634,12 @@ namespace Nop.Plugin.Payments.TodoPago
                 voidRequestParams.Add(ElementNames.REQUESTKEY, todoPagoTransactionDto.requestKey);
             else
                 voidRequestParams.Add(ElementNames.REQUESTKEY, "");
-   
+
             return voidRequestParams;
         }
 
-        private Dictionary<string, string> generateReturnRequestParams(int orderId , String amount) {
+        private Dictionary<string, string> generateReturnRequestParams(int orderId, String amount)
+        {
 
             Dictionary<string, string> returnRequestParams = new Dictionary<string, string>();
 
@@ -533,24 +652,27 @@ namespace Nop.Plugin.Payments.TodoPago
                 returnRequestParams.Add(ElementNames.REQUESTKEY, todoPagoTransactionDto.requestKey);
             else
                 returnRequestParams.Add(ElementNames.REQUESTKEY, "");
-            
+
             return returnRequestParams;
         }
 
-        private decimal GetPesosAmount(decimal amount){
+        private decimal GetPesosAmount(decimal amount)
+        {
             Currency pesos = _currencyService.GetCurrencyByCode("ARG");
             pesos = _currencyService.GetCurrencyByCode("AR");
 
-            if (pesos == null) {
+            if (pesos == null)
+            {
                 pesos = new Currency();
                 pesos.CurrencyCode = "32";
             }
-               // throw new Exception("Pesos currency cannot be loaded");
+            // throw new Exception("Pesos currency cannot be loaded");
 
             return _currencyService.ConvertFromPrimaryStoreCurrency(amount, pesos);
         }
 
-        public Dictionary<string, Object> getStatus(Order order) {
+        public Dictionary<string, Object> getStatus(Order order)
+        {
 
             TodoPagoConnectorPrepare();
 
@@ -559,9 +681,11 @@ namespace Nop.Plugin.Payments.TodoPago
 
             res = this.connector.GetStatus(this.merchant, order.Id.ToString());
 
-            for (int i = 0; i < res.Count; i++) {
+            for (int i = 0; i < res.Count; i++)
+            {
                 Dictionary<string, object> dic = res[i];
-                foreach (Dictionary<string, object> aux in dic.Values) {
+                foreach (Dictionary<string, object> aux in dic.Values)
+                {
                     //foreach (string k in aux.Keys) {
                     //    if (aux[k].GetType().IsInstanceOfType(aux)) {
                     //        Dictionary<string, object> a = (Dictionary<string, object>)aux[k];
@@ -584,7 +708,7 @@ namespace Nop.Plugin.Payments.TodoPago
 
             String responseGetStatus = todoPagoBusinessService.serealizar(result);
             _logger.Information("TodoPago ResponseGetStatus : " + responseGetStatus);
-        
+
             return result;
 
         }
@@ -597,7 +721,8 @@ namespace Nop.Plugin.Payments.TodoPago
         /// </summary>
         /// <param name="voidPaymentRequest">Request</param>
         /// <returns>Result</returns>
-        public VoidPaymentResult Void(VoidPaymentRequest voidPaymentRequest){
+        public VoidPaymentResult Void(VoidPaymentRequest voidPaymentRequest)
+        {
             var result = new VoidPaymentResult();
             result.AddError("Void method not supported");
             return result;
@@ -608,7 +733,8 @@ namespace Nop.Plugin.Payments.TodoPago
         /// </summary>
         /// <param name="processPaymentRequest">Payment info required for an order processing</param>
         /// <returns>Process payment result</returns>
-        public ProcessPaymentResult ProcessRecurringPayment(ProcessPaymentRequest processPaymentRequest){
+        public ProcessPaymentResult ProcessRecurringPayment(ProcessPaymentRequest processPaymentRequest)
+        {
             var result = new ProcessPaymentResult();
             result.AddError("Recurring payment not supported");
             return result;
@@ -619,7 +745,8 @@ namespace Nop.Plugin.Payments.TodoPago
         /// </summary>
         /// <param name="cancelPaymentRequest">Request</param>
         /// <returns>Result</returns>
-        public CancelRecurringPaymentResult CancelRecurringPayment(CancelRecurringPaymentRequest cancelPaymentRequest) {
+        public CancelRecurringPaymentResult CancelRecurringPayment(CancelRecurringPaymentRequest cancelPaymentRequest)
+        {
             var result = new CancelRecurringPaymentResult();
             result.AddError("Recurring payment not supported");
             return result;
@@ -630,7 +757,8 @@ namespace Nop.Plugin.Payments.TodoPago
         /// </summary>
         /// <param name="order">Order</param>
         /// <returns>Result</returns>
-        public bool CanRePostProcessPayment(Order order){
+        public bool CanRePostProcessPayment(Order order)
+        {
             if (order == null)
                 throw new ArgumentNullException("order");
 
@@ -644,7 +772,8 @@ namespace Nop.Plugin.Payments.TodoPago
         /// <param name="actionName">Action name</param>
         /// <param name="controllerName">Controller name</param>
         /// <param name="routeValues">Route values</param>
-        public void GetConfigurationRoute(out string actionName, out string controllerName, out RouteValueDictionary routeValues) {
+        public void GetConfigurationRoute(out string actionName, out string controllerName, out RouteValueDictionary routeValues)
+        {
             actionName = "Configure";
             controllerName = "PaymentTodoPago";
             routeValues = new RouteValueDictionary { { "Namespaces", "Nop.Plugin.Payments.TodoPago.Controllers" }, { "area", null } };
@@ -656,13 +785,15 @@ namespace Nop.Plugin.Payments.TodoPago
         /// <param name="actionName">Action name</param>
         /// <param name="controllerName">Controller name</param>
         /// <param name="routeValues">Route values</param>
-        public void GetPaymentInfoRoute(out string actionName, out string controllerName, out RouteValueDictionary routeValues){
+        public void GetPaymentInfoRoute(out string actionName, out string controllerName, out RouteValueDictionary routeValues)
+        {
             actionName = "PaymentInfo";
             controllerName = "PaymentTodoPago";
             routeValues = new RouteValueDictionary { { "Namespaces", "Nop.Plugin.Payments.TodoPago.Controllers" }, { "area", null } };
         }
 
-        public Type GetControllerType() {
+        public Type GetControllerType()
+        {
             return typeof(PaymentTodoPagoController);
         }
 
@@ -680,7 +811,9 @@ namespace Nop.Plugin.Payments.TodoPago
                 //Formulario = Formulario.Externo,
                 SetCuotas = false,
                 MaxCuotas = MaxCuotas.Doce,
-                User  = "",         
+                Chart = true,
+
+                User = "",
                 Password = "",
 
                 //Ambiente Developer
@@ -729,6 +862,15 @@ namespace Nop.Plugin.Payments.TodoPago
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.MaxCuotasValues", "Numero maximo de cuotas");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.MaxCuotasValues.Hint", "Puede escojer entre 1 o 12 cuotas");
 
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.SetTimeout", "Habilitar/Desabilitar timeout");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.SetTimeout.Hint", "Habilita el ingreso del timeout");
+
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Timeout", "Tiempo maximo en milisegundos para realizar el pago en el formulario (300000 a 21600000)");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Timeout.Hint", "Los valores posibles van de 300000 (5 minutos) a 21600000 (6hs) en milisegundos. En caso de que no se envíe el parámetro el valor por defecto es 1800000 (30 minutos).");
+
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Chart", "¿Desea vaciar carrito de compras al fallar el pago?");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Chart.Hint", "Si falla el pago, vacía el carrito de compras");
+
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User", "User");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User.Hint", "User de Todo Pago.");
 
@@ -771,6 +913,7 @@ namespace Nop.Plugin.Payments.TodoPago
 
             //Status Fields
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.OrderStatus", "Estado de la Transaccion");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.ResultMessage", "Mensaje de la Transaccion");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Close", "Cerrar");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.ResultCode", "ResultCode");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.DateTime", "DateTime");
@@ -780,7 +923,7 @@ namespace Nop.Plugin.Payments.TodoPago
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Type", "Type");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.InstallmentPayments", "InstallmentPayments");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CustomerEmail", "CustomerEmail");
-            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.IdentificatioType", "IdentificatioType");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.IdentificationType", "IdentificationType");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Identification", "Identification");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CardNumber", "CardNumber");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CardHolderName", "CardHolderName");
@@ -801,6 +944,19 @@ namespace Nop.Plugin.Payments.TodoPago
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PushNotifyStates", "PushNotifyStates");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Refunded", "Refunded");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Refunds", "Refunds");
+            
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.FeeAmount", "FeeAmount");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.TaxAmount", "TaxAmount");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.ServiceChargeAmount", "ServiceChargeAmount");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CreditedAmount", "CreditedAmount");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.FeeAmountBuyer", "FeeAmountBuyer");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.TaxAmountBuyer", "TaxAmountBuyer");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CreditedAmountBuyer", "CreditedAmountBuyer");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.EstadoContraCargo", "EstadoContraCargo");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Comision", "Comision");
+
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.IdContracargo", "IdContracargo");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.FechaNotificacionCuenta", "FechaNotificacionCuenta");
 
             _contex.Install();
             base.Install();
@@ -829,6 +985,15 @@ namespace Nop.Plugin.Payments.TodoPago
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.SetCuotas.Hint");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.MaxCuotasValues");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.MaxCuotasValues.Hint");
+
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.SetTimeout");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.SetTimeout.Hint");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Timeout");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Timeout.Hint");
+
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Chart");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Chart.Hint");
+
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User.Hint");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Password");
@@ -867,7 +1032,7 @@ namespace Nop.Plugin.Payments.TodoPago
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Type");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.InstallmentPayments");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CustomerEmail");
-            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.IdentificatioType");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.IdentificationType");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Identification");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CardNumber");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CardHolderName");
@@ -889,6 +1054,20 @@ namespace Nop.Plugin.Payments.TodoPago
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Refunded");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Refunds");
 
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.ResultMessage");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.FeeAmount");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.TaxAmount");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.ServiceChargeAmount");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CreditedAmount");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.FeeAmountBuyer");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.TaxAmountBuyer");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CreditedAmountBuyer");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.EstadoContraCargo");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Comision");
+
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.IdContracargo");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.FechaNotificacionCuenta");
+            
             _contex.Uninstall();
             base.Uninstall();
         }
@@ -897,8 +1076,10 @@ namespace Nop.Plugin.Payments.TodoPago
         /// <summary>
         /// Gets a value indicating whether capture is supported
         /// </summary>
-        public bool SupportCapture{
-            get{
+        public bool SupportCapture
+        {
+            get
+            {
                 return false;
             }
         }
@@ -906,8 +1087,10 @@ namespace Nop.Plugin.Payments.TodoPago
         /// <summary>
         /// Gets a value indicating whether partial refund is supported
         /// </summary>
-        public bool SupportPartiallyRefund{
-            get {
+        public bool SupportPartiallyRefund
+        {
+            get
+            {
                 return true;
             }
         }
@@ -926,8 +1109,10 @@ namespace Nop.Plugin.Payments.TodoPago
         /// <summary>
         /// Gets a value indicating whether void is supported
         /// </summary>
-        public bool SupportVoid{
-            get{
+        public bool SupportVoid
+        {
+            get
+            {
                 return false;
             }
         }
@@ -935,8 +1120,10 @@ namespace Nop.Plugin.Payments.TodoPago
         /// <summary>
         /// Gets a recurring payment type of payment method
         /// </summary>
-        public RecurringPaymentType RecurringPaymentType{
-            get {
+        public RecurringPaymentType RecurringPaymentType
+        {
+            get
+            {
                 return RecurringPaymentType.NotSupported;
             }
         }
@@ -944,8 +1131,10 @@ namespace Nop.Plugin.Payments.TodoPago
         /// <summary>
         /// Gets a payment method type
         /// </summary>
-        public PaymentMethodType PaymentMethodType {
-            get {
+        public PaymentMethodType PaymentMethodType
+        {
+            get
+            {
                 return PaymentMethodType.Redirection;
             }
         }
@@ -953,16 +1142,12 @@ namespace Nop.Plugin.Payments.TodoPago
         /// <summary>
         /// Gets a value indicating whether we should display a payment information page for this plugin
         /// </summary>
-        public bool SkipPaymentInfo {
-            get{
+        public bool SkipPaymentInfo
+        {
+            get
+            {
                 return false;
             }
         }
-
-
-
-
-
-
     }
 }

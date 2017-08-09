@@ -1,0 +1,21 @@
+﻿@model Nop.Plugin.Payments.TodoPago.Models.OrderStatusTPModel
+@using Nop.Web.Models.Order
+@{
+    Layout = "~/Views/Shared/_ColumnsOne.cshtml";
+    ////title
+    //Html.AddTitleParts("Order Details");
+    ////page class
+    //Html.AppendPageCssClassParts("html-order-details-page");
+}
+<div class="page order-details-page">
+    <div class="order-overview">
+        <div class="order-number">
+            <strong>Order #@Model.ORDERSTATUSID</strong>
+        </div>
+        <ul class="order-overview-content">
+            <li>
+                Message: @Model.ORDERSTATUSMESSAGE
+            </li>
+        </ul>
+    </div>
+</div>

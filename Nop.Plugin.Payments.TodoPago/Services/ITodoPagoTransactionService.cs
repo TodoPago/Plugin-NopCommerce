@@ -7,7 +7,7 @@ namespace Nop.Plugin.Payments.TodoPago.Services
     {
         void deleteTodoPagoTransactionRecord(TodoPagoTransactionRecord todoPagoTransactionRecord);
 
-        IPagedList<TodoPagoTransactionRecord> findAll(int pageIndex = 0 , int pageSize = int.MaxValue);
+        IPagedList<TodoPagoTransactionRecord> findAll(int pageIndex = 0, int pageSize = int.MaxValue);
 
         TodoPagoTransactionRecord findById(int todoPagoTransactionRecordId);
 

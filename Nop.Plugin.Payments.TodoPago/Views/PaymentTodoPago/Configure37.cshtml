@@ -22,28 +22,8 @@
 
                     <h4><p style="color:red;">@ViewBag.getDescriptionError</p></h4>
                     <em>Medio de pago TodoPago</em><br /><br />
-                    <em>Version  del plugin 1.0.0</em><br /><br />
+                    <em>Version  del plugin 1.1.0</em><br /><br />
                 </p>
-            </td>
-        </tr>
-        <tr>
-            <td class="adminTitle">
-                @Html.OverrideStoreCheckboxFor(model => model.Titulo_OverrideForStore, model => model.Titulo, Model.ActiveStoreScopeConfiguration)
-                @Html.NopLabelFor(model => model.Titulo):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.Titulo)
-                @Html.ValidationMessageFor(model => model.Titulo)
-            </td>
-        </tr>
-        <tr>
-            <td class="adminTitle">
-                @Html.OverrideStoreCheckboxFor(model => model.Descripcion_OverrideForStore, model => model.Descripcion, Model.ActiveStoreScopeConfiguration)
-                @Html.NopLabelFor(model => model.Descripcion):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.Descripcion)
-                @Html.ValidationMessageFor(model => model.Descripcion)
             </td>
         </tr>
         <tr>
@@ -84,6 +64,36 @@
             </td>
         </tr>
         <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.SetTimeout_OverrideForStore, model => model.SetTimeout, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.SetTimeout):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.SetTimeout)
+                @Html.ValidationMessageFor(model => model.SetTimeout)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.Timeout_OverrideForStore, model => model.Timeout, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.Timeout):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Timeout)
+                @Html.ValidationMessageFor(model => model.Timeout)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.Chart_OverrideForStore, model => model.Chart, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.Chart):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Chart)
+                @Html.ValidationMessageFor(model => model.Chart)
+            </td>
+        </tr>
+        <tr>
             <td colspan="2">
                 <p>
                     <br />
@@ -93,27 +103,27 @@
         </tr>
         <tr>
             <td class="adminTitle">
-                @Html.OverrideStoreCheckboxFor(model => model.User_OverrideForStore, model => model.User, Model.ActiveStoreScopeConfiguration)
-                @Html.NopLabelFor(model => model.User):
+                @Html.OverrideStoreCheckboxFor(model => model.UserDev_OverrideForStore, model => model.UserDev, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.UserDev):
             </td>
             <td class="adminData">
-                @Html.EditorFor(model => model.User)
-                @Html.ValidationMessageFor(model => model.User)
+                @Html.EditorFor(model => model.UserDev)
+                @Html.ValidationMessageFor(model => model.UserDev)
             </td>
         </tr>
         <tr>
             <td class="adminTitle">
-                @Html.OverrideStoreCheckboxFor(model => model.Password_OverrideForStore, model => model.Password, Model.ActiveStoreScopeConfiguration)
-                @Html.NopLabelFor(model => model.Password):
+                @Html.OverrideStoreCheckboxFor(model => model.PasswordDev_OverrideForStore, model => model.PasswordDev, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.PasswordDev):
             </td>
             <td class="adminData">
-                @Html.PasswordFor(model => model.Password, new { @class = "password form-control text-box single-line" })
-                @Html.ValidationMessageFor(model => model.Password)
+                @Html.PasswordFor(model => model.PasswordDev, new { @class = "password form-control text-box single-line" })
+                @Html.ValidationMessageFor(model => model.PasswordDev)
             </td>
         </tr>
         <tr>
             <td colspan="2">
-                <input type="button" id="Todopago_btnCredentials" name="Todopago_btnCredentials" value="@T("Plugins.Payments.TodoPago.BtnCredentials")" class="adminButton" />
+                <input type="button" id="Todopago_btnCredentialsDev" name="Todopago_btnCredentialsDev" value="@T("Plugins.Payments.TodoPago.BtnCredentials")" class="adminButton" />
             </td>
         </tr>
         <tr>
@@ -153,6 +163,39 @@
             <td class="adminData">
                 @Html.EditorFor(model => model.MerchantDeveloper)
                 @Html.ValidationMessageFor(model => model.MerchantDeveloper)
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <p>
+                    <br />
+                    <em>Credenciales de producción</em><br />
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.User_OverrideForStore, model => model.User, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.User):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.User)
+                @Html.ValidationMessageFor(model => model.User)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.Password_OverrideForStore, model => model.Password, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.Password):
+            </td>
+            <td class="adminData">
+                @Html.PasswordFor(model => model.Password, new { @class = "password form-control text-box single-line" })
+                @Html.ValidationMessageFor(model => model.Password)
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <input type="button" id="Todopago_btnCredentials" name="Todopago_btnCredentials" value="@T("Plugins.Payments.TodoPago.BtnCredentials")" class="adminButton" />
             </td>
         </tr>
         <tr>

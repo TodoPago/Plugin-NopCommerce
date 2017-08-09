@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Nop.Core;
+﻿using Nop.Core;
 
 namespace Nop.Plugin.Payments.TodoPago.Domain
 {
     public partial class TodoPagoTransactionRecord : BaseEntity
     {
-
         public int ordenId { get; set; }
 
         public string firstStep { get; set; }
@@ -29,6 +23,5 @@ namespace Nop.Plugin.Payments.TodoPago.Domain
         public string publicRequestKey { get; set; }
 
         public string answerKey { get; set; }
- 
     }
 }

@@ -1,6 +1,5 @@
 namespace Nop.Plugin.Payments.TodoPago
 {
-
     public enum MaxCuotas
     {
         Default = 0,

@@ -18,22 +18,26 @@ namespace Nop.Plugin.Payments.TodoPago.Data
         public TodoPagoTransactionObjectContex(string nameOrConnectionString)
             : base(nameOrConnectionString) { }
 
-        protected override void OnModelCreating(DbModelBuilder modelBuilder){
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
             modelBuilder.Configurations.Add(new TodoPagoTransactionRecordMap());
             //disable EdmMetadata generation
             //modelBuilder.Conventions.Remove<IncludeMetadataConvention>();
             base.OnModelCreating(modelBuilder);
         }
 
-        public string CreateDatabaseScript(){
+        public string CreateDatabaseScript()
+        {
             return ((IObjectContextAdapter)this).ObjectContext.CreateDatabaseScript();
         }
 
-        public new IDbSet<TEntity> Set<TEntity>() where TEntity : BaseEntity{
+        public new IDbSet<TEntity> Set<TEntity>() where TEntity : BaseEntity
+        {
             return base.Set<TEntity>();
         }
 
-        public void Install(){
+        public void Install()
+        {
             this.DropPluginTable("todopago_transaction");
             //create the table
             var dbScript = CreateDatabaseScript();
@@ -43,7 +47,7 @@ namespace Nop.Plugin.Payments.TodoPago.Data
 
         public void Uninstall()
         {
-            var tableName = this.GetTableName<TodoPagoTransactionRecord>();   
+            var tableName = this.GetTableName<TodoPagoTransactionRecord>();
             this.DropPluginTable(tableName);
         }
 

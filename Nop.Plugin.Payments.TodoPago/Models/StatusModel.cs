@@ -1,17 +1,16 @@
-﻿using System.Web.Mvc;
-using Nop.Web.Framework;
+﻿using Nop.Web.Framework;
 using Nop.Web.Framework.Mvc;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
-
-namespace Nop.Plugin.Payments.TodoPago.Models{
-
-    public class StatusModel : BaseNopModel{
-
+namespace Nop.Plugin.Payments.TodoPago.Models
+{
+    public class StatusModel : BaseNopModel
+    {
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.ResultCode")]
         public string RESULTCODE { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.ResultMessage")]
+        public string RESULTMESSAGE { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.DateTime")]
         public string DATETIME { get; set; }
@@ -34,7 +33,7 @@ namespace Nop.Plugin.Payments.TodoPago.Models{
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.CustomerEmail")]
         public string CUSTOMEREMAIL { get; set; }
 
-        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.IdentificatioType")]
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.IdentificationType")]
         public string IDENTIFICATIONTYPE { get; set; }
 
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.Identification")]
@@ -57,7 +56,7 @@ namespace Nop.Plugin.Payments.TodoPago.Models{
 
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.CouponExpDate")]
         public string COUPONEXPDATE { get; set; }
-       
+
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.CouponSecexpDate")]
         public string COUPONSECEXPDATE { get; set; }
 
@@ -94,8 +93,41 @@ namespace Nop.Plugin.Payments.TodoPago.Models{
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.Refunded")]
         public string REFUNDED { get; set; }
 
-        [NopResourceDisplayName("Admin.Orders.Fields.Refunds")]
-        public Dictionary<string, object> REFUNDS { get; set; }
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.Refunds")]
+        public string REFUNDS { get; set; }
 
-        }
+        //Nuevos campos del GetStatus
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.FeeAmount")]
+        public string FEEAMOUNT { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.TaxAmount")]
+        public string TAXAMOUNT { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.ServiceChargeAmount")]
+        public string SERVICECHARGEAMOUNT { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.CreditedAmount")]
+        public string CREDITEDAMOUNT { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.FeeAmountBuyer")]
+        public string FEEAMOUNTBUYER { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.TaxAmountBuyer")]
+        public string TAXAMOUNTBUYER { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.CreditedAmountBuyer")]
+        public string CREDITEDAMOUNTBUYER { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.EstadoContraCargo")]
+        public string ESTADOCONTRACARGO { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.Comision")]
+        public string COMISION { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.IdContracargo")]
+        public string IDCONTRACARGO { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.FechaNotificacionCuenta")]
+        public string FECHANOTIFICACIONCUENTA { get; set; }
     }
+}

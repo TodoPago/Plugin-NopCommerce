@@ -1,7 +1,6 @@
 using Autofac;
 using Autofac.Core;
 using Nop.Core.Configuration;
-using Nop.Core.Data;
 using Nop.Core.Infrastructure;
 using Nop.Core.Infrastructure.DependencyManagement;
 using Nop.Data;
@@ -9,6 +8,7 @@ using Nop.Web.Framework.Mvc;
 using Nop.Plugin.Payments.TodoPago.Data;
 using Nop.Plugin.Payments.TodoPago.Services;
 using Nop.Plugin.Payments.TodoPago.Domain;
+using Nop.Core.Data;
 
 namespace Nop.Plugin.Payments.TodoPago.Infrastructure
 {
