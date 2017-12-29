@@ -14,14 +14,14 @@
         <div class="panel panel-default">
             <div class="panel-body">
 
-                <h2><p><em>TodoPago</em></p></h2>
+                <h2><p><em>Todo Pago</em></p></h2>
 
                 <br />
 
                 <h4><p><div class="text-danger">@ViewBag.getDescriptionError</div></p></h4>
 
-                <p><em>Medio de pago TodoPago</em></p>
-                <p><em>Version  del plugin 1.1.0</em></p>
+                <p><em>Medio de pago Todo Pago</em></p>
+                <p><em>Version  del plugin 1.2.0</em></p>
 
                 <br />
 
@@ -96,6 +96,17 @@
                     <div class="col-md-7">
                         @Html.NopEditorFor(model => model.Chart)
                         @Html.ValidationMessageFor(model => model.Chart)
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.OverrideStoreCheckboxFor(model => model.Hibrido_OverrideForStore, model => model.Hibrido, Model.ActiveStoreScopeConfiguration)
+                        @Html.NopLabelFor(model => model.Hibrido)
+                    </div>
+                    <div class="col-md-7">
+                        @Html.NopEditorFor(model => model.Hibrido)
+                        @Html.ValidationMessageFor(model => model.Hibrido)
                     </div>
                 </div>
 

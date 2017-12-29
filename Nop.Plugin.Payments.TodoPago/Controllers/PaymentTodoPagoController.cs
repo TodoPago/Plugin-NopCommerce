@@ -11,17 +11,17 @@ using Nop.Services.Orders;
 using Nop.Services.Stores;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
-using TodoPagoConnector.Model;
-using TodoPagoConnector.Exceptions;
 using Nop.Plugin.Payments.TodoPago.Utils;
 using Nop.Web.Framework.Controllers;
-using Nop.Services.Catalog;
-using Nop.Core.Domain.Catalog;
+using System.Net;
 
 namespace Nop.Plugin.Payments.TodoPago.Controllers
 {
     public class PaymentTodoPagoController : BasePaymentController
     {
+        protected const string TODOPAGO_STATUS_CODE = "StatusCode";
+        protected const string TODOPAGO_STATUS_MESSAGE = "StatusMessage";
+
         private readonly ILocalizationService _localizationService;
         private readonly ISettingService _settingService;
         private readonly IStoreService _storeService;
@@ -32,6 +32,8 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
         private readonly IPaymentService _paymentService;
         private readonly PaymentSettings _paymentSettings;
         private readonly IOrderProcessingService _orderProcessingService;
+        private readonly TodoPagoPaymentSettings _todoPagoPaymentSettings;
+        private System.Web.HttpContextBase _httpContext;
 
         public PaymentTodoPagoController(ILocalizationService localizationService,
             ISettingService settingService,
@@ -42,6 +44,7 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
             IStoreContext storeContext,
             IWebHelper webHelper,
             PaymentSettings paymentSettings,
+            TodoPagoPaymentSettings todoPagoPaymentSettings,
             IOrderProcessingService orderProcessingService
             )
         {
@@ -54,7 +57,9 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
             this._webHelper = webHelper;
             this._paymentService = paymentService;
             this._paymentSettings = paymentSettings;
+            this._todoPagoPaymentSettings = todoPagoPaymentSettings;
             this._orderProcessingService = orderProcessingService;
+            this._httpContext = Nop.Core.Infrastructure.EngineContext.Current.Resolve<System.Web.HttpContextBase>();
         }
 
         [AdminAuthorize]
@@ -88,6 +93,9 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
                 Timeout = todoPagoPaymentSettings.Timeout,
 
                 Chart = todoPagoPaymentSettings.Chart,
+                GoogleMaps = todoPagoPaymentSettings.GoogleMaps,
+
+                Hibrido = todoPagoPaymentSettings.Hibrido,
 
                 User = todoPagoPaymentSettings.User,
                 Password = todoPagoPaymentSettings.Password,
@@ -132,6 +140,9 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
                 model.Timeout_OverrideForStore = _settingService.SettingExists(todoPagoPaymentSettings, x => x.Timeout, storeScope);
 
                 model.Chart_OverrideForStore = _settingService.SettingExists(todoPagoPaymentSettings, x => x.Chart, storeScope);
+                model.GoogleMaps_OverrideForStore = _settingService.SettingExists(todoPagoPaymentSettings, x => x.GoogleMaps, storeScope);
+
+                model.Hibrido_OverrideForStore = _settingService.SettingExists(todoPagoPaymentSettings, x => x.Hibrido, storeScope);
 
                 model.User_OverrideForStore = _settingService.SettingExists(todoPagoPaymentSettings, x => x.User, storeScope);
                 model.Password_OverrideForStore = _settingService.SettingExists(todoPagoPaymentSettings, x => x.Password, storeScope);
@@ -220,6 +231,9 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
             }
 
             todoPagoPaymentSettings.Chart = model.Chart;
+            todoPagoPaymentSettings.GoogleMaps = model.GoogleMaps;
+
+            todoPagoPaymentSettings.Hibrido = model.Hibrido;
 
             todoPagoPaymentSettings.User = model.User;
             todoPagoPaymentSettings.Password = model.Password;
@@ -296,6 +310,16 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
             else if (storeScope > 0)
                 _settingService.DeleteSetting(todoPagoPaymentSettings, x => x.Chart, storeScope);
 
+            if (model.SetTimeout_OverrideForStore || storeScope == 0)
+                _settingService.SaveSetting(todoPagoPaymentSettings, x => x.GoogleMaps, storeScope, false);
+            else if (storeScope > 0)
+                _settingService.DeleteSetting(todoPagoPaymentSettings, x => x.GoogleMaps, storeScope);
+
+            if (model.SetTimeout_OverrideForStore || storeScope == 0)
+                _settingService.SaveSetting(todoPagoPaymentSettings, x => x.Hibrido, storeScope, false);
+            else if (storeScope > 0)
+                _settingService.DeleteSetting(todoPagoPaymentSettings, x => x.Hibrido, storeScope);
+
             if (model.User_OverrideForStore || storeScope == 0)
                 _settingService.SaveSetting(todoPagoPaymentSettings, x => x.User, storeScope, false);
             else if (storeScope > 0)
@@ -367,12 +391,10 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
         [ChildActionOnly]
         public ActionResult PaymentInfo()
         {
-
             //FORMULARIO EXTERNO, REDIRECCION
             ActionResult result = View("~/Plugins/Payments.TodoPago/Views/PaymentTodoPago/PaymentInfo.cshtml");
 
             return result;
-
         }
 
         [NonAction]
@@ -393,7 +415,6 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
         [ValidateInput(false)]
         public ActionResult OrderReturn(FormCollection form)
         {
-
             var answerKey = _webHelper.QueryString<string>("answer");
             var ordenId = _webHelper.QueryString<string>("ordenId");
 
@@ -407,9 +428,6 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
                 !processor.IsPaymentMethodActive(_paymentSettings) || !processor.PluginDescriptor.Installed)
                 throw new NopException("TodoPago module cannot be loaded");
 
-            //var order = _orderService.SearchOrders(storeId: _storeContext.CurrentStore.Id,
-            //            customerId: _workContext.CurrentCustomer.Id, pageSize: 1).FirstOrDefault();
-
             var order = _orderService.GetOrderById(id);
             if (order == null || order.Deleted)
             {
@@ -419,73 +437,38 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
 
             if (order != null)
             {
-                Boolean aprobada = processor.TodoPagoSecondStep(answerKey, order);
-
-                if (aprobada)
+                Dictionary<string, object> responseGaa = processor.TodoPagoSecondStep(answerKey, order);
+                int statusCode = (int)responseGaa[TODOPAGO_STATUS_CODE];
+                
+                if (statusCode == -1)
                 {
                     return RedirectToRoute("CheckoutCompleted", new { orderId = order.Id });
                 }
                 else
                 {
-                    return RedirectToRoute("OrderDetails", new { orderId = order.Id });
+                    _httpContext.Session["OrderPaymentInfo"] = (string)responseGaa[TODOPAGO_STATUS_MESSAGE];
+                    return RedirectToAction("OrderStatusTP", new { id = order.Id });
                 }
             }
+
             return RedirectToAction("Index", "Home", new { area = "" });
         }
-
 
         [HttpPost]
         [ValidateInput(false)]
         public ActionResult GetCredentials(string user = "", string password = "", string mode = "")
         {
-
             var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.TodoPago") as TodoPagoPaymentProcessor;
             if (processor == null ||
                 !processor.IsPaymentMethodActive(_paymentSettings) || !processor.PluginDescriptor.Installed)
                 throw new NopException("TodoPago module cannot be loaded");
 
-            String security = String.Empty;
-            String message = String.Empty;
-            User resultUser = new User();
-            Boolean success = false;
-
-            try
-            {
-                if (processor != null)
-                {
-                    resultUser = processor.getCredentials(user, password, mode);
-                }
-
-                string[] securityD = resultUser.getApiKey().Split(' ');
-                security = securityD[1];
-                success = true;
-
-            }
-            catch (ResponseException ex)
-            {
-                success = false;
-                message = ex.Message;
-            }
-            catch (Exception ex)
-            {
-                success = false;
-                message = ex.Message;
-            }
-
-            return Json(new
-            {
-                success = success,
-                message = message,
-                merchandid = resultUser.getMerchant(),
-                apikey = resultUser.getApiKey(),
-                security = security
-            });
+            return Json(processor.getCredentials(user, password, mode));
         }
 
         [ValidateInput(false)]
         public ActionResult List(FormCollection form)
         {
-
             var model = new OrderListModel();
 
             var pm = _paymentService.LoadPaymentMethodBySystemName("Payments.TodoPago");
@@ -499,14 +482,12 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
         [ValidateInput(false)]
         public ActionResult GetStatus(int id)
         {
-
             Dictionary<string, Object> response = new Dictionary<string, Object>();
 
             var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.TodoPago") as TodoPagoPaymentProcessor;
             if (processor == null ||
                 !processor.IsPaymentMethodActive(_paymentSettings) || !processor.PluginDescriptor.Installed)
                 throw new NopException("TodoPago module cannot be loaded");
-
 
             var order = _orderService.GetOrderById(id);
             if (order == null || order.Deleted)
@@ -515,125 +496,76 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
                 return RedirectToAction("List");
             }
 
-            if (processor != null)
-            {
-                response = processor.getStatus(order);
-            }
+            ActionResult result = View("~/Plugins/Payments.TodoPago/Views/PaymentTodoPago/StatusPopUp.cshtml", processor.getStatus(order));
 
-            var model = new StatusModel();
-            model = prepareStatusModel(model, response);
-
-            ActionResult result = View("~/Plugins/Payments.TodoPago/Views/PaymentTodoPago/StatusPopUp.cshtml", model);
-
-            return result;
-        }
-
-        private StatusModel prepareStatusModel(StatusModel model, Dictionary<string, Object> response)
-        {
-
-            model.RESULTCODE = getValueByKey(response, "RESULTCODE");
-            model.RESULTMESSAGE = getValueByKey(response, "RESULTMESSAGE");
-            model.DATETIME = getValueByKey(response, "DATETIME");
-            model.OPERATIONID = getValueByKey(response, "OPERATIONID");
-            model.CURRENCYCODE = getValueByKey(response, "CURRENCYCODE");
-            model.AMOUNT = getValueByKey(response, "AMOUNT");
-            model.TYPE = getValueByKey(response, "TYPE");
-            model.INSTALLMENTPAYMENTS = getValueByKey(response, "INSTALLMENTPAYMENTS");
-            model.CUSTOMEREMAIL = getValueByKey(response, "CUSTOMEREMAIL");
-            model.IDENTIFICATIONTYPE = getValueByKey(response, "IDENTIFICATIONTYPE");
-            model.IDENTIFICATION = getValueByKey(response, "IDENTIFICATION");
-            model.CARDNUMBER = getValueByKey(response, "CARDNUMBER");
-            model.CARDHOLDERNAME = getValueByKey(response, "CARDHOLDERNAME");
-            model.TICKETNUMBER = getValueByKey(response, "TICKETNUMBER");
-            model.AUTHORIZATIONCODE = getValueByKey(response, "AUTHORIZATIONCODE");
-            model.BARCODE = getValueByKey(response, "BARCODE");
-            model.COUPONEXPDATE = getValueByKey(response, "COUPONEXPDATE");
-            model.COUPONSECEXPDATE = getValueByKey(response, "COUPONSECEXPDATE");
-            model.COUPONSUBSCRIBER = getValueByKey(response, "COUPONSUBSCRIBER");
-            model.BANKID = getValueByKey(response, "BANKID");
-            model.PAYMENTMETHODTYPE = getValueByKey(response, "PAYMENTMETHODTYPE");
-            model.PAYMENTMETHODCODE = getValueByKey(response, "PAYMENTMETHODCODE");
-            model.PROMOTIONID = getValueByKey(response, "PROMOTIONID");
-            model.AMOUNTBUYER = getValueByKey(response, "AMOUNTBUYER");
-            model.PAYMENTMETHODNAME = getValueByKey(response, "PAYMENTMETHODNAME");
-            model.PUSHNOTIFYENDPOINT = getValueByKey(response, "PUSHNOTIFYENDPOINT");
-            model.PUSHNOTIFYMETHOD = getValueByKey(response, "PUSHNOTIFYMETHOD");
-            model.PUSHNOTIFYSTATES = getValueByKey(response, "PUSHNOTIFYSTATES");
-            model.REFUNDED = getValueByKey(response, "REFUNDED");
-
-            // Nuevos campos del GetStatus
-            model.REFUNDS = getValueArrayByKey(response, "REFUNDS");
-            if (model.REFUNDS == "{}") model.REFUNDS = "";
-            model.FEEAMOUNT = getValueByKey(response, "FEEAMOUNT");
-            model.TAXAMOUNT = getValueByKey(response, "TAXAMOUNT");
-            model.SERVICECHARGEAMOUNT = getValueByKey(response, "SERVICECHARGEAMOUNT");
-            model.CREDITEDAMOUNT = getValueByKey(response, "CREDITEDAMOUNT");
-            model.FEEAMOUNTBUYER = getValueByKey(response, "FEEAMOUNTBUYER");
-            model.TAXAMOUNTBUYER = getValueByKey(response, "TAXAMOUNTBUYER");
-            model.CREDITEDAMOUNTBUYER = getValueByKey(response, "CREDITEDAMOUNTBUYER");
-            model.ESTADOCONTRACARGO = getValueByKey(response, "ESTADOCONTRACARGO");
-            model.COMISION = getValueByKey(response, "COMISION");
-
-            model.IDCONTRACARGO = getValueByKey(response, "IDCONTRACARGO");
-            model.FECHANOTIFICACIONCUENTA = getValueByKey(response, "FECHANOTIFICACIONCUENTA");
-
-            return model;
-        }
-
-        private string getValueArrayByKey(Dictionary<string, Object> map, String key)
-        {
-            String result = String.Empty;
-
-            if (map.ContainsKey(key))
-            {
-                result = Newtonsoft.Json.JsonConvert.SerializeObject(map[key]);
-            }
-
-            return result;
-        }
-
-        private string getValueByKey(Dictionary<string, Object> map, String key)
-        {
-            String result = String.Empty;
-
-            if (map.ContainsKey(key))
-            {
-                result = (String)map[key];
-            }
             return result;
         }
 
         [HttpGet]
-        public ActionResult OrderStatusTP(int id, string message)
+        public ActionResult OrderStatusTP(int id)
         {
             ActionResult result;
 
             var model = new OrderStatusTPModel();
 
             model.ORDERSTATUSID = id;
-            model.ORDERSTATUSMESSAGE = message;
+
+            if (!_todoPagoPaymentSettings.Chart)
+            {
+                var order = _orderService.GetOrderById(id);
+                if (order == null || order.Deleted || _workContext.CurrentCustomer.Id != order.CustomerId)
+                    return new HttpUnauthorizedResult();
+
+                _orderProcessingService.ReOrder(order);
+            }
+
+            if (_httpContext.Session["OrderPaymentInfo"] != null)
+                model.ORDERSTATUSMESSAGE = (string)_httpContext.Session["OrderPaymentInfo"];
 
             result = View("~/Plugins/Payments.TodoPago/Views/PaymentTodoPago/OrderStatusTP.cshtml", model);
 
             return result;
         }
 
+        [HttpPost]
+        public ActionResult OrderStatusMessage(string message)
+        {
+            _httpContext.Session["OrderPaymentInfo"] = message;
+
+            return new HttpStatusCodeResult(HttpStatusCode.NoContent);
+        }
+
         [HttpGet]
-        public ActionResult OrderStatusFailTP(int id, string message)
+        public ActionResult HybridForm(int id, string publicRequestKey)
         {
             ActionResult result;
-            var model = new OrderStatusTPModel();
-
-            model.ORDERSTATUSID = id;
-            model.ORDERSTATUSMESSAGE = message;
-
+            var model = new HybridModel();
             var order = _orderService.GetOrderById(id);
-            if (order == null || order.Deleted || _workContext.CurrentCustomer.Id != order.CustomerId)
-                return new HttpUnauthorizedResult();
+            string storeLocation;
 
-            _orderProcessingService.ReOrder(order);
+            model.ID = id;
+            model.PUBLICREQUESTKEY = publicRequestKey;
+            model.EMAIL = order.BillingAddress.Email;
+            model.NOMBRECOMPLETO = order.BillingAddress.FirstName + " " + order.BillingAddress.LastName;
 
-            result = View("~/Plugins/Payments.TodoPago/Views/PaymentTodoPago/OrderStatusTP.cshtml", model);
+            if (_todoPagoPaymentSettings.Ambiente == Ambiente.Production)
+            {
+                model.URL_HYBRIDFORM = "https://forms.todopago.com.ar/resources/v2/TPBSAForm.min.js";
+            }
+            else
+            {
+                model.URL_HYBRIDFORM = "https://developers.todopago.com.ar/resources/v2/TPBSAForm.min.js";
+            }
+
+            if (_webHelper.IsCurrentConnectionSecured())
+                storeLocation = _webHelper.GetStoreLocation(true);
+            else
+                storeLocation = _webHelper.GetStoreLocation(false);
+
+            model.URL_OK = storeLocation + "Plugins/PaymentTodoPago/OrderReturn?ordenId=" + id;
+            model.URL_ERROR = storeLocation + "Plugins/PaymentTodoPago/OrderStatusTP/" + id;
+
+            result = View("~/Plugins/Payments.TodoPago/Views/PaymentTodoPago/HybridForm.cshtml", model);
 
             return result;
         }

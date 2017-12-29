@@ -29,6 +29,10 @@ namespace Nop.Plugin.Payments.TodoPago
 
         public bool Chart { get; set; }
 
+        public bool GoogleMaps { get; set; }
+
+        public bool Hibrido { get; set; }
+
         public string User { get; set; }
 
         public string Password { get; set; }

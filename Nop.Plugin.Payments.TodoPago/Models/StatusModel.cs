@@ -1,6 +1,5 @@
 ﻿using Nop.Web.Framework;
 using Nop.Web.Framework.Mvc;
-using System.Collections.Generic;
 
 namespace Nop.Plugin.Payments.TodoPago.Models
 {
@@ -129,5 +128,54 @@ namespace Nop.Plugin.Payments.TodoPago.Models
 
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.FechaNotificacionCuenta")]
         public string FECHANOTIFICACIONCUENTA { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.TEA")]
+        public string TEA { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.CFT")]
+        public string CFT { get; set; }
+
+        // SP 46
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.RELEASESTATUS")]
+        public string RELEASESTATUS { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.RELEASEDATETIME")]
+        public string RELEASEDATETIME { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.PHONENUMBER")]
+        public string PHONENUMBER { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.ADDRESS")]
+        public string ADDRESS { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.POSTALCODE")]
+        public string POSTALCODE { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.CUSTOMERID")]
+        public string CUSTOMERID { get; set; }
+
+        //[NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.PRODUCTCODE")]
+        //public string PRODUCTCODE { get; set; }
+
+        //[NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.PRODUCTDESCRIPTION")]
+        //public string PRODUCTDESCRIPTION { get; set; }
+
+        //[NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.PRODUCTNAME")]
+        //public string PRODUCTNAME { get; set; }
+
+        //[NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.QUANTITY")]
+        //public string QUANTITY { get; set; }
+
+        //[NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.PRODUCTSKU")]
+        //public string PRODUCTSKU { get; set; }
+
+        //[NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.UNITPRICE")]
+        //public string UNITPRICE { get; set; }
+
+        //[NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.TOTALAMOUNT")]
+        //public string TOTALAMOUNT { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.Items")]
+        public string ITEMS { get; set; }
     }
 }

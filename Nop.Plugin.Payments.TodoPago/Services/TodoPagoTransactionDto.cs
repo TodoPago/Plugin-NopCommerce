@@ -1,9 +1,7 @@
-﻿using System;
-namespace Nop.Plugin.Payments.TodoPago.Services
+﻿namespace Nop.Plugin.Payments.TodoPago.Services
 {
     public class TodoPagoTransactionDto
     {
-
         public int ordenId { get; set; }
 
         public string firstStep { get; set; }

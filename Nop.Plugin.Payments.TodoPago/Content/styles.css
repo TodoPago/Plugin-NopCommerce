@@ -1,0 +1,193 @@
+﻿/* Hoja de estilo del formulario híbrido */
+@keyframes barFill {
+    0% {
+        width: 0;
+    }
+    100% {
+        width: 100%;
+    }
+}
+
+.formuHibrido {
+    width: 100%;
+}
+
+.formuHibrido button {
+    margin: 5px;
+}
+
+.advertencia {
+    color: red;
+    padding: 1px;
+}
+
+.progress {
+    height: 40px;
+    width: 100%;
+    animation-name: barHide;
+    animation-duration: 0.5s;
+    animation-fill-mode: forwards;
+    animation-delay: 1s;
+    position: absolute;
+}
+
+.fail {
+    background-color: lightpink;
+    border-color: red;
+}
+
+.input {
+    margin: auto;
+    height: 40px;
+    background: #F8F8F8;
+    border: 1px solid #CCCCCC;
+    width: 100% !important;
+}
+
+input {
+    font-size: medium
+}
+
+.modal-class {
+}
+
+.modal-content {
+}
+
+.advertencia {
+    z-index: 100;
+}
+
+#todopago_logo {
+    width: 110px;
+    height: 40px;
+}
+
+#loading-hibrid {
+    border-radius: 0 5px 5px 0;
+    background-color: rgb(244, 0, 122);
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(244, 180, 122, .5) 35px, rgba(244, 200, 122, .5) 70px);
+    width: 0;
+    animation-name: barFill;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+    height: 100%;
+}
+
+.row {
+    height: 60px;
+    width: 100%;
+    margin-bottom: 11px;
+}
+
+.bloque-full {
+    flex: 1;
+}
+
+.bloque-small {
+    flex: 1;
+}
+
+.bloque-medium {
+    flex: 2;
+}
+
+.bloque-big {
+    flex: 3;
+}
+
+.bloque {
+    margin: 0 0 0 10px;
+    padding: 1px
+}
+
+.left-col {
+    width: 49%;
+    height: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    display: inline-flex;
+}
+
+.float-right {
+    float: right;
+}
+
+.float-left {
+    float: left
+}
+
+.right-col {
+    float: right;
+    right: 0px;
+    width: 49%;
+    height: 100%;
+    display: inline-flex;
+    justify-content: space-between;
+}
+
+.button-primary:enabled {
+    color: white;
+    background-color: rgb(5, 165, 203);
+    background-image: none;
+    background-repeat: repeat;
+    background-attachment: scroll;
+    background-clip: border-box;
+    background-origin: padding-box;
+    background-position-x: 0;
+    background-position-y: 0;
+    background-size: auto auto;
+}
+
+.tp-button-1 {
+	display: inline-block;
+	min-width: 140px;
+	border: none;
+	background-color: #4ab2f1;
+	padding: 10px 30px;
+	text-align: center;
+	font-size: 15px;
+	color: #fff;
+	text-transform: uppercase;
+}
+.tp-button-1:hover {
+	background-color: #248ece;
+}
+
+#tpForm {
+    opacity: 0;
+}
+
+.barFiller{
+    animation-name: barFill;
+    animation-duration: 1s;
+    animation-fill-mode: forwards;
+    animation-iteration-count: 5;
+}
+
+.loaded-form {
+    display: none
+}
+ 
+#row-pei{
+    display: none;
+    margin-bottom: 60px;
+    margin-top: -15px;
+}
+
+input, select{
+    box-sizing: border-box;
+}
+
+#fechaLbl{
+    font-size: 0.65em;
+}
+
+@media only screen and (orientation: portrait){
+    .left-col, .right-col{
+        width: 100%;
+    }
+    .row{
+        width: 95%;
+    }
+}

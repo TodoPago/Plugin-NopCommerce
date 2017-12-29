@@ -18,11 +18,11 @@
         <tr>
             <td colspan="2">
                 <p>
-                    <em>TodoPago</em><br /><br />
+                    <em>Todo Pago</em><br /><br />
 
                     <h4><p style="color:red;">@ViewBag.getDescriptionError</p></h4>
-                    <em>Medio de pago TodoPago</em><br /><br />
-                    <em>Version  del plugin 1.1.0</em><br /><br />
+                    <em>Medio de pago Todo Pago</em><br /><br />
+                    <em>Version  del plugin 1.2.0</em><br /><br />
                 </p>
             </td>
         </tr>
@@ -91,6 +91,16 @@
             <td class="adminData">
                 @Html.EditorFor(model => model.Chart)
                 @Html.ValidationMessageFor(model => model.Chart)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.OverrideStoreCheckboxFor(model => model.Hibrido_OverrideForStore, model => model.Hibrido, Model.ActiveStoreScopeConfiguration)
+                @Html.NopLabelFor(model => model.Hibrido):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Hibrido)
+                @Html.ValidationMessageFor(model => model.Hibrido)
             </td>
         </tr>
         <tr>

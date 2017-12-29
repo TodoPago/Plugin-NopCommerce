@@ -17,8 +17,8 @@ namespace Nop.Plugin.Payments.TodoPago.Infrastructure
     /// </summary>
     public class DependencyRegistrar : IDependencyRegistrar
     {
-
         private const string CONTEXT_NAME = "nop_object_context_todopago_transaction";
+        private const string CONTEXT_NAME_ADDRESSBOOK = "nop_object_context_todopago_address_book";
 
         /// <summary>
         /// Register services and interfaces
@@ -37,6 +37,17 @@ namespace Nop.Plugin.Payments.TodoPago.Infrastructure
             builder.RegisterType<EfRepository<TodoPagoTransactionRecord>>()
                 .As<IRepository<TodoPagoTransactionRecord>>()
                 .WithParameter(ResolvedParameter.ForNamed<IDbContext>(CONTEXT_NAME))
+                .InstancePerLifetimeScope();
+
+            builder.RegisterType<TodoPagoAddressBookService>().As<ITodoPagoAddressBookService>().InstancePerLifetimeScope();
+
+            //data context
+            this.RegisterPluginDataContext<TodoPagoAddressBookObjectContex>(builder, CONTEXT_NAME_ADDRESSBOOK);
+
+            //override required repository with our custom context
+            builder.RegisterType<EfRepository<TodoPagoAddressBookRecord>>()
+                .As<IRepository<TodoPagoAddressBookRecord>>()
+                .WithParameter(ResolvedParameter.ForNamed<IDbContext>(CONTEXT_NAME_ADDRESSBOOK))
                 .InstancePerLifetimeScope();
 
         }
@@ -58,6 +69,18 @@ namespace Nop.Plugin.Payments.TodoPago.Infrastructure
             builder.RegisterType<EfRepository<TodoPagoTransactionRecord>>()
                 .As<IRepository<TodoPagoTransactionRecord>>()
                 .WithParameter(ResolvedParameter.ForNamed<IDbContext>(CONTEXT_NAME))
+                .InstancePerLifetimeScope();
+
+
+            builder.RegisterType<TodoPagoAddressBookService>().As<ITodoPagoAddressBookService>().InstancePerLifetimeScope();
+
+            //data context
+            this.RegisterPluginDataContext<TodoPagoAddressBookObjectContex>(builder, CONTEXT_NAME_ADDRESSBOOK);
+
+            //override required repository with our custom context
+            builder.RegisterType<EfRepository<TodoPagoAddressBookRecord>>()
+                .As<IRepository<TodoPagoAddressBookRecord>>()
+                .WithParameter(ResolvedParameter.ForNamed<IDbContext>(CONTEXT_NAME_ADDRESSBOOK))
                 .InstancePerLifetimeScope();
 
         }

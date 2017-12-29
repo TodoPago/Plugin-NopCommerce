@@ -13,21 +13,20 @@ namespace Nop.Plugin.Payments.TodoPago.Services
 {
     public class TodoPagoBusinessService
     {
-
-        private Dictionary<string, string> stateCodeDictionary;
+        private readonly ITodoPagoTransactionService _todoPagoTransactionService;
+        private readonly ITodoPagoAddressBookService _todoPagoAddressBookService;
+        
         private const string TODOPAGO_SAR_ARS = "ARS";
         private const string TODOPAGO_NUMERAL = "#";
 
-        //private TodoPagoTransactionDto todoPagoTransactionDto;
+        private Dictionary<string, string> stateCodeDictionary;
 
-        private readonly ITodoPagoTransactionService _todoPagoTransactionService;
-
-        public TodoPagoBusinessService(ITodoPagoTransactionService todoPagoTransactionService)
+        public TodoPagoBusinessService(ITodoPagoTransactionService todoPagoTransactionService, ITodoPagoAddressBookService todoPagoAddressBookService)
         {
             this._todoPagoTransactionService = todoPagoTransactionService;
+            this._todoPagoAddressBookService = todoPagoAddressBookService;
             setState();
         }
-
 
         public void insertTodoPagoTransactionRecord(TodoPagoTransactionDto todoPagoTransactionDto)
         {
@@ -36,41 +35,66 @@ namespace Nop.Plugin.Payments.TodoPago.Services
 
         public TodoPagoTransactionDto findTodoPagoTransactionRecord(int orderId)
         {
-
-            TodoPagoTransactionDto result = null;
-
-            if (orderId != null)
-            {
-                result = this.toDto(_todoPagoTransactionService.findByOrdenId(orderId));
-            }
-
-            return result;
+            return this.toDto(_todoPagoTransactionService.findByOrdenId(orderId));
         }
 
         public void updateTodoPagoTransactionRecord(TodoPagoTransactionDto todoPagoTransactionDto)
         {
-
             TodoPagoTransactionRecord record = _todoPagoTransactionService.findByOrdenId(todoPagoTransactionDto.ordenId);
-            //TodoPagoTransactionDto result = findTodoPagoTransactionRecord(todoPagoTransactionDto.ordenId);
 
             if (record != null)
             {
-
                 record.secondStep = todoPagoTransactionDto.secondStep;
                 record.paramsGAA = todoPagoTransactionDto.paramsGAA;
                 record.responseGAA = todoPagoTransactionDto.responseGAA;
                 record.answerKey = todoPagoTransactionDto.answerKey;
 
                 _todoPagoTransactionService.updateTodoPagoTransactionRecord(record);
-
             }
         }
+        
+        public void insertTodoPagoAddressBookRecord(TodoPagoAddressBookDto todoPagoAddressBookDto)
+        {
+            _todoPagoAddressBookService.insertTodoPagoAddressBookRecord(this.toRecord(todoPagoAddressBookDto));
+        }
 
+        public TodoPagoAddressBookDto findTodoPagoAddressBookRecord(string hash)
+        {
+            TodoPagoAddressBookDto result = null;
+
+            if (!String.IsNullOrEmpty(hash))
+                result = this.toDto(_todoPagoAddressBookService.findByHash(hash));
+
+            return result;
+        }
+
+        public void updateTodoPagoAddressBookRecord(TodoPagoAddressBookDto todoPagoAddressBookDto)
+        {
+            TodoPagoAddressBookRecord record = _todoPagoAddressBookService.findByHash(todoPagoAddressBookDto.hash);
+
+            if (record != null)
+            {
+                record.street = todoPagoAddressBookDto.street;
+                record.city = todoPagoAddressBookDto.city;
+                record.state = todoPagoAddressBookDto.state;
+                record.country = todoPagoAddressBookDto.country;
+                record.postal = todoPagoAddressBookDto.postal;
+
+                _todoPagoAddressBookService.updateTodoPagoAddressBookRecord(record);
+            }
+        }
+        
         public Dictionary<string, string> completePayLoad(Dictionary<string, string> payload, PostProcessPaymentRequest postProcessPaymentRequest)
         {
-
             var orderTotal = Math.Round(postProcessPaymentRequest.Order.OrderTotal, 2);
             String amount = orderTotal.ToString("0.00", CultureInfo.InvariantCulture);
+            StringBuilder csitProductCode = new StringBuilder();
+            StringBuilder csitProductDescription = new StringBuilder();
+            StringBuilder csitProductName = new StringBuilder();
+            StringBuilder csitProductsSKU = new StringBuilder();
+            StringBuilder csitTotalAmount = new StringBuilder();
+            StringBuilder csitQuantity = new StringBuilder();
+            StringBuilder csitUnitPrice = new StringBuilder();
 
             payload.Add("CSBTCITY", postProcessPaymentRequest.Order.BillingAddress.City);
             payload.Add("CSBTCOUNTRY", postProcessPaymentRequest.Order.BillingAddress.Country.TwoLetterIsoCode ?? "AR");//MANDATORIO. Código ISO.
@@ -109,7 +133,6 @@ namespace Nop.Plugin.Payments.TodoPago.Services
                 payload.Add("CSSTSTATE", "C");//MANDATORIO
                 payload.Add("CSSTSTREET1", postProcessPaymentRequest.Order.BillingAddress.Address1);//MANDATORIO.
                 payload.Add("CSSTSTREET2", postProcessPaymentRequest.Order.BillingAddress.Address2);//NO MANDATORIO.
-
             }
             else
             {
@@ -125,17 +148,7 @@ namespace Nop.Plugin.Payments.TodoPago.Services
                 payload.Add("CSSTSTREET1", postProcessPaymentRequest.Order.ShippingAddress.Address1);//MANDATORIO.
                 payload.Add("CSSTSTREET2", postProcessPaymentRequest.Order.ShippingAddress.Address2);//NO MANDATORIO.
             }
-
-
-
-            StringBuilder csitProductCode = new StringBuilder();
-            StringBuilder csitProductDescription = new StringBuilder();
-            StringBuilder csitProductName = new StringBuilder();
-            StringBuilder csitProductsSKU = new StringBuilder();
-            StringBuilder csitTotalAmount = new StringBuilder();
-            StringBuilder csitQuantity = new StringBuilder();
-            StringBuilder csitUnitPrice = new StringBuilder();
-
+            
             var cartItems = postProcessPaymentRequest.Order.OrderItems;
 
             foreach (var item in cartItems)
@@ -171,7 +184,6 @@ namespace Nop.Plugin.Payments.TodoPago.Services
 
         private String getDescription(String description, String shortDescription, String name)
         {
-
             String result = "description";
 
             if (String.IsNullOrEmpty(description))
@@ -196,17 +208,12 @@ namespace Nop.Plugin.Payments.TodoPago.Services
 
         private String getSKU(String SKU, String code)
         {
-
             String result = "SKU";
 
             if (SKU != null && !SKU.Equals(String.Empty))
-            {
                 result = SKU;
-            }
             else
-            {
                 result = code;
-            }
 
             return result;
         }
@@ -240,91 +247,81 @@ namespace Nop.Plugin.Payments.TodoPago.Services
             this.stateCodeDictionary["Z"] = "9400";
         }
 
-        //private String findState()
-        //{
-        //    String result = "1000";
-
-        //    if (this.resultDictionary.ContainsKey(CSBTSTATE))
-        //    {
-        //        if (this.stateCodeDictionary.ContainsKey(this.resultDictionary[CSBTSTATE]))
-        //        {
-        //            result = this.stateCodeDictionary[(this.resultDictionary[CSBTSTATE])];
-        //        }
-        //    }
-        //    return result;
-        //}
-
-        //public void setTodoPagoTransactionDto(TodoPagoTransactionDto todoPagoTransactionDto){
-        //    this.todoPagoTransactionDto = todoPagoTransactionDto;
-        //}
-
-        //public TodoPagoTransactionDto getTodoPagoTransactionDto(){
-        //    return this.todoPagoTransactionDto;
-        //}
-
-
         public String serealizar(Dictionary<string, object> dict)
         {
-
             StringBuilder builder = new StringBuilder();
 
             foreach (KeyValuePair<string, object> pair in dict)
-            {
                 builder.Append(pair.Key).Append(":").Append(pair.Value).Append(',');
-            }
-
-            String result = builder.ToString();
-            result = result.TrimEnd(',');
-
-            return result;
+            
+            return builder.ToString().TrimEnd(',');
         }
-
-
-
+        
         public String serealizar(Dictionary<string, string> dict)
         {
-
             StringBuilder builder = new StringBuilder();
 
             foreach (KeyValuePair<string, string> pair in dict)
-            {
                 builder.Append(pair.Key).Append(":").Append(pair.Value).Append(',');
-            }
 
-            String result = builder.ToString();
-            result = result.TrimEnd(',');
-
-            return result;
-
+            return builder.ToString().TrimEnd(',');
         }
 
         public String serealizarRefund(Dictionary<string, object> dict)
         {
-
             StringBuilder builder = new StringBuilder();
 
             foreach (KeyValuePair<string, object> pair in dict)
             {
                 if (pair.Value is Dictionary<string, object>)
-                {
                     builder.Append(pair.Key).Append(":").Append(serealizar((Dictionary<string, object>)pair.Value)).Append(',');
+                else
+                    builder.Append(pair.Key).Append(":").Append(pair.Value).Append(',');
+            }
+            
+            return builder.ToString().TrimEnd(',');
+        }
+
+        public String serealizarGAA(Dictionary<string, object> dict)
+        {
+            StringBuilder builder = new StringBuilder();
+
+            foreach (KeyValuePair<string, object> pair in dict)
+            {
+                if (pair.Key.Equals("Payload"))
+                {
+                    StringBuilder builderPayload = new StringBuilder();
+                    builder.Append(pair.Key).Append("[");
+                    System.Xml.XmlNode[] aux = (System.Xml.XmlNode[])pair.Value;
+                    if (aux != null)
+                    {
+                        {
+                            for (int i = 0; i < aux.Count(); i++)
+                            {
+                                System.Xml.XmlNodeList inner = aux[i].ChildNodes;
+                                for (int j = 0; j < inner.Count; j++)
+                                {
+                                    builderPayload.Append(inner.Item(j).Name + " : " + inner.Item(j).InnerText + ",");
+                                }
+                            }
+                        }
+                    }
+                    builder.Append(builderPayload.ToString().TrimEnd(','));
+                    builder.Append("]");
                 }
                 else
                 {
                     builder.Append(pair.Key).Append(":").Append(pair.Value).Append(',');
                 }
             }
-
-            String result = builder.ToString();
-            result = result.TrimEnd(',');
-
-            return result;
+            
+            return builder.ToString().TrimEnd(',');
         }
 
         public TodoPagoTransactionRecord toRecord(TodoPagoTransactionDto dto)
         {
-
             TodoPagoTransactionRecord record = new TodoPagoTransactionRecord();
+
             record.ordenId = dto.ordenId;
             record.firstStep = dto.firstStep;
             record.paramsSAR = dto.paramsSAR;
@@ -337,13 +334,12 @@ namespace Nop.Plugin.Payments.TodoPago.Services
             record.answerKey = dto.answerKey;
 
             return record;
-
         }
 
         public TodoPagoTransactionDto toDto(TodoPagoTransactionRecord record)
         {
-
             TodoPagoTransactionDto dto = new TodoPagoTransactionDto();
+
             dto.ordenId = record.ordenId;
             dto.firstStep = record.firstStep;
             dto.paramsSAR = record.paramsSAR;
@@ -358,7 +354,35 @@ namespace Nop.Plugin.Payments.TodoPago.Services
             return dto;
         }
 
+        public TodoPagoAddressBookRecord toRecord(TodoPagoAddressBookDto dto)
+        {
+            TodoPagoAddressBookRecord record = new TodoPagoAddressBookRecord();
 
+            record.hash = dto.hash;
+            record.street = dto.street;
+            record.city = dto.city;
+            record.state = dto.state;
+            record.country = dto.country;
+            record.postal = dto.postal;
 
+            return record;
+        }
+
+        public TodoPagoAddressBookDto toDto(TodoPagoAddressBookRecord record)
+        {
+            TodoPagoAddressBookDto dto = new TodoPagoAddressBookDto();
+
+            if (record != null)
+            {
+                dto.hash = record.hash;
+                dto.street = record.street;
+                dto.city = record.city;
+                dto.state = record.state;
+                dto.country = record.country;
+                dto.postal = record.postal;
+            }
+
+            return dto;
+        }
     }
 }

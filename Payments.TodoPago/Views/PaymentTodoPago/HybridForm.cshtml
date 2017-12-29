@@ -1,0 +1,255 @@
+﻿@model Nop.Plugin.Payments.TodoPago.Models.HybridModel
+@using Nop.Web.Framework.UI;
+@{
+    Layout = "~/Views/Shared/_Root.cshtml";
+    Html.AddCssFileParts(ResourceLocation.Head, "~/Plugins/Payments.TodoPago/Content/styles.css");
+}
+
+<div class="progress">
+    <div class="progress-bar progress-bar-striped active" id="loading-hibrid">
+    </div>
+</div>
+
+<div class="formuHibrido container-fluid" id="tpForm">
+    <!-- row 0 -->
+    <div class="row">
+        <div class="bloque bloque-medium">
+            <img src="https://portal.todopago.com.ar/app/images/logo.png" alt="todopago" id="todopago_logo">
+        </div>
+    </div>
+
+    <!-- row 1 -->
+    <div class="row">
+        <div class="left-col">
+            <div class="bloque bloque-medium float-left">
+                <select id="formaPagoCbx" class="input button-medium"></select>
+            </div>
+            <div class="bloque bloque-big float-left loaded-form">
+                <input id="numeroTarjetaTxt" class="input">
+                <label id="numeroTarjetaLbl" for="numeroTarjetaTxt" class="advertencia"></label>
+            </div>
+        </div>
+        <div class="right-col float-right">
+            <div class="bloque bloque-full float-right">
+                <input id="nombreTxt" class="input button-big">
+                <label id="nombreLbl" for="nombreTxt" class="advertencia"></label>
+            </div>
+        </div>
+    </div>
+
+    <div class="loaded-form">
+        <!-- row 2 -->
+        <div class="row" id="row-pei">
+            <div class="left-col">
+                <div class="bloque bloque-small float-left">
+                    <input id="peiCbx" class="float-right" />
+                </div>
+                <div class="bloque bloque-medium float-left">
+                    <label id="peiLbl" for="peiCbx "></label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="left-col">
+                <div class="bloque bloque-medium float-left">
+                    <select id="medioPagoCbx" class="input"></select>
+                </div>
+                <div class="bloque bloque-medium float-left">
+                    <select id="bancoCbx" class="input "></select>
+                </div>
+            </div>
+            <div class="right-col">
+                <div class="bloque bloque-small float-right">
+                    <select id="tipoDocCbx" class="input "></select>
+                </div>
+                <div class="bloque bloque-big float-right">
+                    <input id="nroDocTxt" class="input button-big">
+                    <label id="nroDocLbl" for="nroDocTxt" class="advertencia"></label>
+                </div>
+            </div>
+        </div>
+        <!-- row 3 -->
+        <div class="row">
+            <div class="left-col">
+                <div class="bloque bloque-small float-left">
+                    <select id="mesCbx" class="input "></select>
+                </div>
+                <div class="bloque bloque-small float-left">
+                    <select id="anioCbx" class="input"></select>
+                    <label id="fechaLbl" class="advertencia "></label>
+                </div>
+                <div class="bloque bloque-small float-left">
+                    <input id="codigoSeguridadTxt" class="input">
+                    <label id="codigoSeguridadLbl" for="codigoSeguridadTxt" class="advertencia"></label>
+                </div>
+            </div>
+            <div class="right-col">
+                <div class="bloque bloque-full float-right">
+                    <input id="emailTxt" class="input">
+                    <label id="emailLbl" for="emailTxt" class="advertencia"></label>
+                </div>
+            </div>
+        </div>
+        <!-- row 4 -->
+        <div class="row">
+            <div class="left-col">
+                <div class="bloque bloque-big float-left">
+                    <select id="promosCbx" class="input "></select>
+                </div>
+            </div>
+            <div class="right-col">
+                <div class="bloque bloque-small float-right">
+                    <input id="tokenPeiTxt" class="input " />
+                    <label id="tokenPeiLbl" for="tokenPeiTxt" class="advertencia"></label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- row 5 -->
+    <div class="row">
+        <div class="bloque bloque-medium float-left">
+            <label id="promosLbl" for="promosCbx button-medium"></label>
+        </div>
+    </div>
+    <!-- row 6 -->
+    <div class="row">
+        <button id="MY_btnPagarConBilletera" class="tp-button-1 button button-payment-method button-primary float-right"></button>
+        <button id="MY_btnConfirmarPago" class="tp-button-1 button button-payment-method button-primary float-right"></button>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function redirectErrorPage() {
+        window.location.href = '@Model.URL_ERROR' + 'Error al cargar el formulario híbrido';
+    }
+</script>
+
+<script type="text/javascript" src="@Model.URL_HYBRIDFORM" onerror="redirectErrorPage();"></script>
+
+<script type="text/javascript">
+    //  window.TPFORMAPI.hybridForm.constructDefaultForm("formContainer");
+    function ignite() {
+        window.TPFORMAPI.hybridForm.initForm({
+            callbackValidationErrorFunction: 'validationCollector',
+            callbackBilleteraFunction: 'billeteraPaymentResponse',
+            callbackCustomSuccessFunction: 'customPaymentSuccessResponse',
+            callbackCustomErrorFunction: 'customPaymentErrorResponse',
+            botonPagarId: 'MY_btnConfirmarPago',
+            botonPagarConBilleteraId: 'MY_btnPagarConBilletera',
+            modalCssClass: 'modal-class',
+            modalContentCssClass: 'modal-content',
+            beforeRequest: 'initLoading',
+            afterRequest: 'stopLoading'
+        });
+        /************* SETEO UN ITEM PARA COMPRAR ******************/
+        window.TPFORMAPI.hybridForm.setItem({
+            publicKey: '@Model.PUBLICREQUESTKEY',
+            defaultNombreApellido: '@Model.NOMBRECOMPLETO',
+            defaultNumeroDoc: '',
+            defaultMail: '@Model.EMAIL',
+            defaultTipoDoc: 'DNI'
+        });
+    }
+
+    /************ FUNCIONES CALLBACKS ************/
+    function validationCollector(parametros) {
+        console.log("Validando los datos");
+        console.log(parametros.field + " -> " + parametros.error);
+        var input = parametros.field;
+        if (input.search("Txt") !== -1) {
+            label = input.replace("Txt", "Lbl");
+        } else {
+            label = input.replace("Cbx", "Lbl");
+        }
+        document.getElementById(label).innerHTML = parametros.error;
+    }
+
+    function billeteraPaymentResponse(response) {
+        console.log("Iniciando billetera");
+        console.log(response.ResultCode + " -> " + response.ResultMessage);
+        if (response.AuthorizationKey) {
+            window.location.href = '@Model.URL_OK' + "&Answer=" + response.AuthorizationKey;
+        } else {
+            window.location.href = '@Model.URL_ERROR';
+        }
+    }
+
+    function customPaymentSuccessResponse(response) {
+        console.log("Success");
+        console.log(response.ResultCode + " -> " + response.ResultMessage);
+        window.location.href = '@Model.URL_OK' + "&Answer=" + response.AuthorizationKey;
+    }
+
+    function customPaymentErrorResponse(response) {
+        console.log("Error al pagar.");
+        console.log(response.ResultCode + " -> " + response.ResultMessage);
+
+        if (response.AuthorizationKey) {
+            window.location.href = '@Model.URL_OK' + "&Answer=" + response.AuthorizationKey;
+        } else {
+            window.location.href = '@Model.URL_ERROR';
+        }
+    }
+
+    function initLoading() {
+        console.log('Loading...');
+    }
+
+    function stopLoading() {
+        console.log('Stop loading...');
+        var peiCbx = $("#peiCbx");
+        var peiRow = $("#row-pei");
+        var tokenPeiRow = $("#tokenpei-row");
+        var tokenPeiTxt = $("#tokenPeiTxt");
+        var tokenPeiBloque = $("#tokenpei-bloque");
+        if (peiCbx.css('display') !== 'none') {
+            peiRow.show('fast');
+        } else {
+            peiRow.hide('fast');
+        }
+        if (tokenPeiTxt.css('display') !== 'none') {
+            tokenPeiBloque.css('height', "%100");
+            tokenPeiRow.css('height', "%100");
+        } else {
+            tokenPeiBloque.css('height', "%0");
+            tokenPeiRow.css('height', "%0");
+        }
+    }
+
+    var formaDePago = document.getElementById("formaPagoCbx");
+    formaDePago.addEventListener("click", function () {
+        if (formaDePago.value === "1") {
+            $(".loaded-form").show('fast');
+        } else {
+            $(".loaded-form").hide('fast');
+        }
+    });
+
+    function initialFormaDePago() {
+        if (formaDePago.value === "1") {
+            $(".loaded-form").show('fast');
+        }
+    }
+
+    function loader() {
+        $("#loading-hibrid").css("width", "50%");
+        setTimeout(function () {
+            ignite();
+        }, 100);
+        setTimeout(function () {
+            $("#loading-hibrid").css("width", "100%");
+        }, 1000);
+        setTimeout(function () {
+            $(".progress").hide('fast');
+            initialFormaDePago();
+        }, 2000);
+        setTimeout(function () {
+            $("#tpForm").fadeTo('fast', 1);
+        }, 2200);
+    }
+
+    $(document).ready(function () {
+        loader();
+    });
+</script>

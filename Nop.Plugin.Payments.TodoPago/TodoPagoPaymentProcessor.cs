@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Web;
 using System.Web.Routing;
 using Nop.Core;
@@ -20,15 +19,9 @@ using Nop.Services.Orders;
 using Nop.Services.Payments;
 using Nop.Services.Security;
 using Nop.Services.Logging;
-using TodoPagoConnector;
 using TodoPagoConnector.Model;
-using TodoPagoConnector.Exceptions;
-using TodoPagoConnector.Utils;
-using Nop.Plugin.Payments.TodoPago.Utils;
-
-
-//using AuthorizeNetSDK = AuthorizeNet;
-
+using Nop.Plugin.Payments.TodoPago.DTO;
+using Nop.Plugin.Payments.TodoPago.Models;
 
 namespace Nop.Plugin.Payments.TodoPago
 {
@@ -37,7 +30,6 @@ namespace Nop.Plugin.Payments.TodoPago
     /// </summary>
     public class TodoPagoPaymentProcessor : BasePlugin, IPaymentMethod, IAdminMenuPlugin
     {
-
         private readonly ISettingService _settingService;
         private readonly ICurrencyService _currencyService;
         private readonly ICustomerService _customerService;
@@ -47,27 +39,13 @@ namespace Nop.Plugin.Payments.TodoPago
         private readonly CurrencySettings _currencySettings;
         private readonly TodoPagoPaymentSettings _todoPagoPaymentSettings;
         private readonly TodoPagoTransactionObjectContex _contex;
+        private readonly TodoPagoAddressBookObjectContex _contexAddressBook;
         private readonly HttpContextBase _httpContext;
         private readonly ILogger _logger;
         private readonly IOrderService _orderService;
 
         //TodoPago
-        private TPConnector connector;
         private TodoPagoBusinessService todoPagoBusinessService;
-        private String merchant;
-        private String security;
-
-        private const string TODOPAGO_SAR_SESSION = "ABCDEF-1234-12221-FDE1-00000200";
-        private const string TODOPAGO_SAR_XML = "XML";
-        private const string TODOPAGO_SAR_CURRENCY_CODE = "032";
-        private const string TODOPAGO_SAR_ARS = "ARS";
-
-        private const string TODOPAGO_STATUS_CODE = "StatusCode";
-        private const string TODOPAGO_STATUS_MESSAGE = "StatusMessage";
-        private const string TODOPAGO_REQUEST_KEY = "RequestKey";
-        private const string TODOPAGO_PUBLIC_REQUEST_KEY = "PublicRequestKey";
-        private const string TODOPAGO_URL_REQUEST = "URL_Request";
-
 
         public TodoPagoPaymentProcessor(ISettingService settingService,
             ICurrencyService currencyService,
@@ -78,10 +56,12 @@ namespace Nop.Plugin.Payments.TodoPago
             CurrencySettings currencySettings,
             TodoPagoPaymentSettings todoPagoPaymentSettings,
             TodoPagoTransactionObjectContex contex,
+            TodoPagoAddressBookObjectContex contexAddressBook,
             HttpContextBase httpContext,
             ILogger logger,
             IOrderService orderService,
-            ITodoPagoTransactionService todoPagoTransactionService)
+            ITodoPagoTransactionService todoPagoTransactionService,
+            ITodoPagoAddressBookService todoPagoAddressBookService)
         {
             this._todoPagoPaymentSettings = todoPagoPaymentSettings;
             this._settingService = settingService;
@@ -92,12 +72,12 @@ namespace Nop.Plugin.Payments.TodoPago
             this._orderTotalCalculationService = orderTotalCalculationService;
             this._encryptionService = encryptionService;
             this._contex = contex;
+            this._contexAddressBook = contexAddressBook;
             this._httpContext = httpContext;
             this._logger = logger;
             this._orderService = orderService;
-            this.todoPagoBusinessService = new TodoPagoBusinessService(todoPagoTransactionService);
+            this.todoPagoBusinessService = new TodoPagoBusinessService(todoPagoTransactionService, todoPagoAddressBookService);
         }
-
 
         public void ManageSiteMap(Nop.Web.Framework.Menu.SiteMapNode rootNode)
         {
@@ -119,306 +99,19 @@ namespace Nop.Plugin.Payments.TodoPago
             rootNode.ChildNodes.Add(menuItem);
         }
 
-        private void TodoPagoConnectorPrepare()
+        public Dictionary<string, object> TodoPagoSecondStep(String answerKey, Order order)
         {
-            String authorization = string.Empty;
-            var headers = new Dictionary<String, String>();
+            Payment paymentModel = new Payment(_todoPagoPaymentSettings, _logger, _webHelper, todoPagoBusinessService, _httpContext, _orderService);
 
-            if (_todoPagoPaymentSettings.Ambiente == Ambiente.Production)
-            {
-                authorization = _todoPagoPaymentSettings.ApiKeyProduction;
-                this.security = _todoPagoPaymentSettings.SecurityProduction;
-                this.merchant = _todoPagoPaymentSettings.MerchantProduction;
-                headers.Add("Authorization", authorization);
-                this.connector = new TPConnector(TPConnector.productionEndpoint, headers);
-            }
-            else
-            {
-                authorization = _todoPagoPaymentSettings.ApiKeyDeveloper;
-                headers.Add("Authorization", authorization);
-                this.security = _todoPagoPaymentSettings.SecurityDeveloper;
-                this.merchant = _todoPagoPaymentSettings.MerchantDeveloper;
-                this.connector = new TPConnector(TPConnector.developerEndpoint, headers);
-            }
-
+            return paymentModel.GetAuthorizeAnswer(answerKey, order);
         }
 
-        private Dictionary<string, Object> TodoPagoFirstStep(PostProcessPaymentRequest postProcessPaymentRequest)
+        public CredentialsResponse getCredentials(String user, String password, String ambiente)
         {
+            Account accountModel = new Account();
 
-            String operationId = postProcessPaymentRequest.Order.Id.ToString();
-
-            Dictionary<string, Object> result = new Dictionary<string, Object>();
-            Dictionary<string, string> sendAuthorizeRequestParams = generateSendAuthorizeRequestParams(operationId);
-            Dictionary<string, string> sendAuthorizeRequestPayload = generateSendAuthorizeRequestPayload(postProcessPaymentRequest);
-
-            String paramSarSereal = todoPagoBusinessService.serealizar(sendAuthorizeRequestParams);
-            String paramSarPayLoadSereal = todoPagoBusinessService.serealizar(sendAuthorizeRequestPayload);
-            _logger.Information("TodoPago ParamSar : " + paramSarSereal + " " + paramSarPayLoadSereal);
-
-            result = this.connector.SendAuthorizeRequest(sendAuthorizeRequestParams, sendAuthorizeRequestPayload);
-
-            int statusCode = 0;
-            if (result.ContainsKey(TODOPAGO_STATUS_CODE))
-            {
-                statusCode = (int)result[TODOPAGO_STATUS_CODE];
-            }
-            String statusMessage = getValueByKey(result, TODOPAGO_STATUS_MESSAGE);
-            String requestKey = getValueByKey(result, TODOPAGO_REQUEST_KEY);
-            String publicRequestKey = getValueByKey(result, TODOPAGO_PUBLIC_REQUEST_KEY);
-
-            String responseSarSereal = todoPagoBusinessService.serealizar(result);
-            _logger.Information("TodoPago ResponseSar : " + responseSarSereal);
-
-            TodoPagoTransactionDto todoPagoTransactionDto = new TodoPagoTransactionDto();
-
-            todoPagoTransactionDto.ordenId = postProcessPaymentRequest.Order.Id;
-            todoPagoTransactionDto.firstStep = DateTime.Now.ToString();
-            todoPagoTransactionDto.paramsSAR = paramSarSereal + " " + paramSarPayLoadSereal;
-            todoPagoTransactionDto.responseSAR = responseSarSereal;
-            todoPagoTransactionDto.requestKey = requestKey;
-            todoPagoTransactionDto.publicRequestKey = publicRequestKey;
-
-            todoPagoBusinessService.insertTodoPagoTransactionRecord(todoPagoTransactionDto);
-
-            return result;
+            return accountModel.GetCredentials(new User(user, password), ambiente);
         }
-
-        private Dictionary<string, string> generateSendAuthorizeRequestParams(String operationId)
-        {
-
-            Dictionary<string, string> sendAuthorizeRequestParams = new Dictionary<string, string>();
-
-            sendAuthorizeRequestParams.Add(ElementNames.SECURITY, this.security);
-            sendAuthorizeRequestParams.Add(ElementNames.SESSION, TODOPAGO_SAR_SESSION);
-            sendAuthorizeRequestParams.Add(ElementNames.MERCHANT, this.merchant);
-
-            string URL_OK = String.Empty;
-            string URL_ERROR = String.Empty;
-
-            if (_webHelper.IsCurrentConnectionSecured())
-            {
-                URL_OK = _webHelper.GetStoreLocation(true) + "Plugins/PaymentTodoPago/OrderReturn?ordenId=" + operationId + "&";
-                if (_todoPagoPaymentSettings.Chart)
-                    URL_ERROR = URL_OK;
-                else
-                    URL_ERROR = _webHelper.GetStoreLocation(true) + "Plugins/PaymentTodoPago/OrderStatusFailTP/" + operationId + "/Ha ocurrido un error al realizar el pago";
-            }
-            else
-            {
-                URL_OK = _webHelper.GetStoreLocation(false) + "Plugins/PaymentTodoPago/OrderReturn?ordenId=" + operationId + "&";
-
-                if (_todoPagoPaymentSettings.Chart)
-                    URL_ERROR = URL_OK;
-                else
-                    URL_ERROR = _webHelper.GetStoreLocation(false) + "Plugins/PaymentTodoPago/OrderStatusFailTP/" + operationId + "/Ha ocurrido un error al realizar el pago";
-            }
-
-            sendAuthorizeRequestParams.Add(ElementNames.URL_OK, URL_OK);
-            sendAuthorizeRequestParams.Add(ElementNames.URL_ERROR, URL_ERROR);
-            sendAuthorizeRequestParams.Add(ElementNames.ENCODING_METHOD, TODOPAGO_SAR_XML);
-
-            return sendAuthorizeRequestParams;
-        }
-
-
-        private Dictionary<string, string> generateSendAuthorizeRequestPayload(PostProcessPaymentRequest postProcessPaymentRequest)
-        {
-
-            Dictionary<string, string> payload = new Dictionary<string, string>();
-
-            String operationId = postProcessPaymentRequest.Order.Id.ToString();
-            String mailClient = postProcessPaymentRequest.Order.BillingAddress.Email;
-
-            var orderTotal = Math.Round(postProcessPaymentRequest.Order.OrderTotal, 2);
-            String amount = orderTotal.ToString("0.00", CultureInfo.InvariantCulture);
-
-            payload.Add(ElementNames.MERCHANT, this.merchant);
-            payload.Add(ElementNames.OPERATIONID, operationId);
-            payload.Add(ElementNames.CURRENCYCODE, TODOPAGO_SAR_CURRENCY_CODE);
-            payload.Add(ElementNames.AMOUNT, amount);
-            payload.Add(ElementNames.EMAILCLIENTE, mailClient);
-
-            if (_todoPagoPaymentSettings.SetCuotas)
-            {
-                foreach (int value in Enum.GetValues(typeof(MaxCuotas)))
-                {
-                    if (((MaxCuotas)value).Equals(_todoPagoPaymentSettings.MaxCuotas))
-                    {
-                        payload.Add(ElementNames.MAXINSTALLMENTS, value.ToString());
-                    }
-                }
-            }
-
-            if (_todoPagoPaymentSettings.SetTimeout)
-            {
-                if (!String.IsNullOrEmpty(_todoPagoPaymentSettings.Timeout))
-                {
-                    long n;
-
-                    if (Int64.TryParse(_todoPagoPaymentSettings.Timeout, out n))
-                    {
-                        // It's a number!
-                        payload.Add(ElementNames.TIMEOUT, _todoPagoPaymentSettings.Timeout);
-                    }
-                }
-            }
-
-            payload = todoPagoBusinessService.completePayLoad(payload, postProcessPaymentRequest);
-            return payload;
-        }
-
-        private string getValueByKey(Dictionary<string, Object> map, String key)
-        {
-            String result = String.Empty;
-
-            if (map.ContainsKey(key))
-            {
-                result = (String)map[key];
-            }
-            return result;
-        }
-
-        public Boolean TodoPagoSecondStep(String answerKey, Order order)
-        {
-
-            Boolean aprobada = false;
-            Boolean pagosOffline = false;
-            string amountBuyer = String.Empty;
-            string amount = String.Empty;
-
-            TodoPagoConnectorPrepare();
-
-            Dictionary<string, Object> result = new Dictionary<string, Object>();
-            Dictionary<string, string> paramsGAA = generateGAARequestParams(answerKey, order.Id);
-            String paramGAASereal = todoPagoBusinessService.serealizar(paramsGAA);
-            _logger.Information("TodoPago ParamsGAA : " + paramGAASereal);
-
-            result = this.connector.GetAuthorizeAnswer(paramsGAA);
-            String responseGAASereal = todoPagoBusinessService.serealizar(result);
-            _logger.Information("TodoPago ResponseGAA :" + responseGAASereal);
-
-            int statusCode = 0;
-            if (result.ContainsKey(TODOPAGO_STATUS_CODE))
-            {
-                statusCode = (int)result[TODOPAGO_STATUS_CODE];
-
-                System.Xml.XmlNode[] aux = (System.Xml.XmlNode[])result["Payload"];
-
-                if (aux != null)
-                {
-                    for (int i = 0; i < aux.Length; i++)
-                    {
-                        System.Xml.XmlNodeList inner = aux[i].ChildNodes;
-                        for (int j = 0; j < inner.Count; j++)
-                        {
-                            if (inner.Item(j).Name.Equals("ASSOCIATEDDOCUMENTATION"))
-                            {
-                                if (!(inner.Item(j).InnerText.Equals(String.Empty))) { pagosOffline = true; }
-                            }
-
-                            if (inner.Item(j).Name.Equals("AMOUNTBUYER"))
-                                amountBuyer = inner.Item(j).InnerText;
-
-                            if (inner.Item(j).Name.Equals("AMOUNT"))
-                                amount = inner.Item(j).InnerText;
-
-                        }
-                    }
-                }
-
-                if (statusCode == -1)
-                {
-                    if (pagosOffline)
-                    {
-                        order.OrderStatus = _todoPagoPaymentSettings.TransaccionOffline;
-                        order.PaymentStatus = PaymentStatus.Pending;
-                        aprobada = true;
-                    }
-                    else
-                    {
-                        order.OrderStatus = _todoPagoPaymentSettings.TransaccionAprobada;
-                        order.PaymentStatus = PaymentStatus.Paid;
-
-                        if (!String.IsNullOrEmpty(amountBuyer) && !String.IsNullOrEmpty(amount))
-                        {
-                            //decimal amountValue = Convert.ToDecimal(amount);
-                            decimal amountValue = order.OrderTotal;
-                            decimal amountBuyerValue = Convert.ToDecimal(amountBuyer);
-
-                            order.OrderTotal = amountBuyerValue;
-                            order.OrderSubtotalInclTax = amountBuyerValue;
-                            order.OrderTax += amountBuyerValue - amountValue;
-                            //order.PaymentMethodAdditionalFeeInclTax = amountBuyerValue - amountValue;
-                            //order.PaymentMethodAdditionalFeeExclTax = amountBuyerValue - amountValue;
-                        }
-
-                        aprobada = true;
-                    }
-                }
-                else
-                {
-                    order.OrderStatus = _todoPagoPaymentSettings.TransaccionRechazada;
-                    order.PaymentStatus = PaymentStatus.Pending;
-                    aprobada = false;
-                }
-            }
-            order.PaidDateUtc = DateTime.UtcNow;
-            _orderService.UpdateOrder(order);
-
-            TodoPagoTransactionDto todoPagoTransactionDto = new TodoPagoTransactionDto();
-
-            todoPagoTransactionDto.ordenId = order.Id;
-            todoPagoTransactionDto.secondStep = DateTime.Now.ToString();
-            todoPagoTransactionDto.paramsGAA = paramGAASereal;
-            todoPagoTransactionDto.responseGAA = responseGAASereal;
-            todoPagoTransactionDto.answerKey = answerKey;
-
-            todoPagoBusinessService.updateTodoPagoTransactionRecord(todoPagoTransactionDto);
-
-            return aprobada;
-
-        }
-
-
-        private Dictionary<string, string> generateGAARequestParams(String answerKey, int orderId)
-        {
-
-            Dictionary<string, string> paramsGAA = new Dictionary<string, string>();
-
-            paramsGAA.Add(ElementNames.SECURITY, this.security);
-            paramsGAA.Add(ElementNames.SESSION, TODOPAGO_SAR_SESSION);
-            paramsGAA.Add(ElementNames.MERCHANT, this.merchant);
-            paramsGAA.Add(ElementNames.ANSWERKEY, answerKey);
-
-            TodoPagoTransactionDto todoPagoTransactionDto = todoPagoBusinessService.findTodoPagoTransactionRecord(orderId);
-
-            if (todoPagoTransactionDto.requestKey != null)
-                paramsGAA.Add(ElementNames.REQUESTKEY, todoPagoTransactionDto.requestKey);
-            else
-                paramsGAA.Add(ElementNames.REQUESTKEY, "");
-
-            return paramsGAA;
-        }
-
-        public User getCredentials(String user, String password, String ambiente)
-        {
-
-            if (ambiente.Equals("dev"))
-            {
-                this.connector = new TPConnector(TPConnector.developerEndpoint);
-            }
-            else
-            {
-                this.connector = new TPConnector(TPConnector.productionEndpoint);
-            }
-
-            User userParam = new User(user, password);
-            User resultUser = this.connector.getCredentials(userParam);
-
-            return resultUser;
-        }
-
 
         /// <summary>
         /// Process a payment
@@ -432,71 +125,17 @@ namespace Nop.Plugin.Payments.TodoPago
             return result;
         }
 
-
         /// <summary>
         /// Post process payment (used by payment ginateways that require redirecting to a third-party URL)
         /// <param name="postProcessPaymentRequest">Payment info required for an order processing</param>
         public void PostProcessPayment(PostProcessPaymentRequest postProcessPaymentRequest)
         {
-
             String urlRedirect = String.Empty;
 
-            //Instancio el conector
-            this.TodoPagoConnectorPrepare();
+            Payment paymentModel = new Payment(_todoPagoPaymentSettings, _logger, _webHelper, todoPagoBusinessService, _httpContext);
 
-            //llamo al first Step, hace el sar
-            Dictionary<string, Object> responseSar = this.TodoPagoFirstStep(postProcessPaymentRequest);
+            urlRedirect = paymentModel.SendAuthorizeRequest(postProcessPaymentRequest, this.PluginDescriptor.Version);
 
-            if (responseSar.ContainsKey(TODOPAGO_STATUS_CODE))
-            {
-                int statusCode = (int)responseSar[TODOPAGO_STATUS_CODE];
-                String urlRequest = getValueByKey(responseSar, TODOPAGO_URL_REQUEST);
-
-                if (!statusCode.Equals(-1))
-                {
-                    string message = String.Empty;
-
-                    if (responseSar[TODOPAGO_STATUS_MESSAGE] != null && !String.IsNullOrEmpty(responseSar[TODOPAGO_STATUS_MESSAGE].ToString()))
-                        message = responseSar[TODOPAGO_STATUS_MESSAGE].ToString().Replace(".", "");
-
-                    if ((int)responseSar[TODOPAGO_STATUS_CODE] >= 98000 && (int)responseSar[TODOPAGO_STATUS_CODE] < 99000)
-                    {
-                        ErrorMessageCS dictionary = new ErrorMessageCS();
-                        _logger.Information("TodoPago ResponseSar :" + statusCode.ToString() + " " + dictionary.GetErrorInfo((int)responseSar[TODOPAGO_STATUS_CODE]));
-                    }
-
-                    postProcessPaymentRequest.Order.OrderStatus = _todoPagoPaymentSettings.TransaccionRechazada;
-                    postProcessPaymentRequest.Order.PaymentStatus = PaymentStatus.Pending;
-
-                    // SAR CON ERRORES
-                    if (_webHelper.IsCurrentConnectionSecured())
-                    {
-                        urlRedirect = _webHelper.GetStoreLocation(true);
-                    }
-                    else
-                    {
-                        urlRedirect = _webHelper.GetStoreLocation(false);
-                    }
-
-                    if (_todoPagoPaymentSettings.Chart)
-                    {
-                        urlRedirect = urlRedirect + "Plugins/PaymentTodoPago/OrderStatusTP/" + postProcessPaymentRequest.Order.Id.ToString() + "/" + message;
-                    }
-                    else
-                    {
-                        urlRedirect = urlRedirect + "Plugins/PaymentTodoPago/OrderStatusFailTP/" + postProcessPaymentRequest.Order.Id.ToString() + "/" + message;
-                    }
-                    //urlRedirect = urlRedirect + "orderdetails/" + postProcessPaymentRequest.Order.Id.ToString();
-                    
-                }
-                else
-                {
-                    // SAR BIEN
-                    urlRedirect = urlRequest;
-                }
-            }
-
-            //Se utiliza para redireccionar al formulario de TodoPago
             _httpContext.Response.Redirect(urlRedirect);
         }
 
@@ -544,177 +183,17 @@ namespace Nop.Plugin.Payments.TodoPago
         /// <returns>Result</returns>
         public RefundPaymentResult Refund(RefundPaymentRequest refundPaymentRequest)
         {
+            Refund refundModel = new Models.Refund(todoPagoBusinessService, _todoPagoPaymentSettings, _logger);
 
-            var result = new RefundPaymentResult();
-
-            //Instancio el conector
-            this.TodoPagoConnectorPrepare();
-
-            Dictionary<string, string> refundParams = new Dictionary<string, string>();
-            Dictionary<string, Object> responseRefund = new Dictionary<string, Object>();
-            Dictionary<string, Object> response = new Dictionary<string, Object>();
-
-            if (refundPaymentRequest.IsPartialRefund)
-            {
-                //String amount = this.GetPesosAmount(refundPaymentRequest.AmountToRefund).ToString("F", new CultureInfo("es-AR"));
-
-                var amountToRefund = (refundPaymentRequest.AmountToRefund / refundPaymentRequest.Order.OrderTotal) * (refundPaymentRequest.Order.OrderTotal - refundPaymentRequest.Order.OrderTax) ;
-
-                var orderTotal = Math.Round(amountToRefund, 2);
-                String amount = orderTotal.ToString("0.00", CultureInfo.InvariantCulture);
-
-                refundParams = generateReturnRequestParams(refundPaymentRequest.Order.Id, amount);
-                String paramRefund = todoPagoBusinessService.serealizar(refundParams);
-                _logger.Information("TodoPago ParamsRefund : " + paramRefund);
-
-                responseRefund = this.connector.ReturnRequest(refundParams);
-                String resultRefund = todoPagoBusinessService.serealizarRefund(responseRefund);
-                _logger.Information("TodoPago resultRefund : " + resultRefund);
-
-            }
-            else
-            {
-                refundParams = generateVoidRequestParams(refundPaymentRequest.Order.Id);
-                String paramRefund = todoPagoBusinessService.serealizar(refundParams);
-                _logger.Information("TodoPago ParamsRefund : " + paramRefund);
-
-                responseRefund = this.connector.VoidRequest(refundParams);
-                String resultRefund = todoPagoBusinessService.serealizarRefund(responseRefund);
-                _logger.Information("TodoPago resultRefund : " + resultRefund);
-            }
-
-            if (responseRefund.ContainsKey("VoidResponse"))
-            {
-                response = (Dictionary<string, Object>)responseRefund["VoidResponse"];
-            }
-
-            if (responseRefund.ContainsKey("ReturnResponse"))
-            {
-                response = (Dictionary<string, Object>)responseRefund["ReturnResponse"];
-            }
-
-            if (response.ContainsKey(TODOPAGO_STATUS_CODE))
-            {
-                System.Int64 statusCode = (System.Int64)response[TODOPAGO_STATUS_CODE];
-
-                if (!statusCode.Equals(2011))
-                {
-                    // REFUND CON ERRORES
-                    String statusMessage = (String)response[TODOPAGO_STATUS_MESSAGE];
-                    result.AddError(statusCode + " - " + statusMessage);
-                }
-                else
-                {
-                    // REFUND BIEN
-                    if (refundPaymentRequest.IsPartialRefund && refundPaymentRequest.Order.RefundedAmount + refundPaymentRequest.AmountToRefund < refundPaymentRequest.Order.OrderTotal)
-                    {
-                        result.NewPaymentStatus = PaymentStatus.PartiallyRefunded;
-                    }
-                    else
-                    {
-                        result.NewPaymentStatus = PaymentStatus.Refunded;
-                    }
-                }
-            }
-
-            return result;
+            return refundModel.ExecuteRefund(refundPaymentRequest);
         }
 
-        private Dictionary<string, string> generateVoidRequestParams(int orderId)
+        public StatusModel getStatus(Order order)
         {
+            Status statusModel = new Status(todoPagoBusinessService, _todoPagoPaymentSettings, _logger);
 
-            Dictionary<string, string> voidRequestParams = new Dictionary<string, string>();
-
-            voidRequestParams.Add(ElementNames.SECURITY, this.security);
-            voidRequestParams.Add(ElementNames.MERCHANT, this.merchant);
-
-            TodoPagoTransactionDto todoPagoTransactionDto = todoPagoBusinessService.findTodoPagoTransactionRecord(orderId);
-
-            if (todoPagoTransactionDto.requestKey != null)
-                voidRequestParams.Add(ElementNames.REQUESTKEY, todoPagoTransactionDto.requestKey);
-            else
-                voidRequestParams.Add(ElementNames.REQUESTKEY, "");
-
-            return voidRequestParams;
+            return statusModel.GetStatus(order);
         }
-
-        private Dictionary<string, string> generateReturnRequestParams(int orderId, String amount)
-        {
-
-            Dictionary<string, string> returnRequestParams = new Dictionary<string, string>();
-
-            returnRequestParams.Add(ElementNames.SECURITY, this.security);
-            returnRequestParams.Add(ElementNames.MERCHANT, this.merchant);
-            returnRequestParams.Add(ElementNames.AMOUNT, amount);
-
-            TodoPagoTransactionDto todoPagoTransactionDto = todoPagoBusinessService.findTodoPagoTransactionRecord(orderId);
-            if (todoPagoTransactionDto.requestKey != null)
-                returnRequestParams.Add(ElementNames.REQUESTKEY, todoPagoTransactionDto.requestKey);
-            else
-                returnRequestParams.Add(ElementNames.REQUESTKEY, "");
-
-            return returnRequestParams;
-        }
-
-        private decimal GetPesosAmount(decimal amount)
-        {
-            Currency pesos = _currencyService.GetCurrencyByCode("ARG");
-            pesos = _currencyService.GetCurrencyByCode("AR");
-
-            if (pesos == null)
-            {
-                pesos = new Currency();
-                pesos.CurrencyCode = "32";
-            }
-            // throw new Exception("Pesos currency cannot be loaded");
-
-            return _currencyService.ConvertFromPrimaryStoreCurrency(amount, pesos);
-        }
-
-        public Dictionary<string, Object> getStatus(Order order)
-        {
-
-            TodoPagoConnectorPrepare();
-
-            Dictionary<string, Object> result = new Dictionary<string, Object>();
-            List<Dictionary<string, object>> res = new List<Dictionary<string, object>>();
-
-            res = this.connector.GetStatus(this.merchant, order.Id.ToString());
-
-            for (int i = 0; i < res.Count; i++)
-            {
-                Dictionary<string, object> dic = res[i];
-                foreach (Dictionary<string, object> aux in dic.Values)
-                {
-                    //foreach (string k in aux.Keys) {
-                    //    if (aux[k].GetType().IsInstanceOfType(aux)) {
-                    //        Dictionary<string, object> a = (Dictionary<string, object>)aux[k];
-                    //        Console.WriteLine("- " + k + ": ");
-                    //        foreach (Dictionary<string, object> aux2 in a.Values) {
-                    //            Console.WriteLine("- REFUND: ");
-                    //            foreach (string b in aux2.Keys) {
-                    //                Console.WriteLine("- " + b + ": " + aux2[b]);
-                    //            }
-                    //        }
-                    //    } else {
-                    //        Console.WriteLine("- " + k + ": " + aux[k]);
-                    //    }
-                    //}
-
-                    result = aux;
-
-                }
-            }
-
-            String responseGetStatus = todoPagoBusinessService.serealizar(result);
-            _logger.Information("TodoPago ResponseGetStatus : " + responseGetStatus);
-
-            return result;
-
-        }
-
-
-
 
         /// <summary>
         /// Voids a payment
@@ -871,6 +350,12 @@ namespace Nop.Plugin.Payments.TodoPago
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Chart", "¿Desea vaciar carrito de compras al fallar el pago?");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Chart.Hint", "Si falla el pago, vacía el carrito de compras");
 
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.GoogleMaps", "¿Desea validar la dirección de compra con Google Maps?");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.GoogleMaps.Hint", "Verifica la dirección con Google");
+
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Hibrido", "¿Desea utilizar el formulario híbrido?");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Hibrido.Hint", "Verifica la dirección con Google");
+
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User", "User");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User.Hint", "User de Todo Pago.");
 
@@ -909,7 +394,7 @@ namespace Nop.Plugin.Payments.TodoPago
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.TransaccionOfflineValues", "Estado cuando la transaccion ha sido Offline");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.TransaccionOfflineValues.Hint", "Valor por defecto: Pendiente");
 
-            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.RedirectionTip", "TodoPago va a redireccionar al formulario de pago.");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.RedirectionTip", "Todo Pago va a redireccionar al formulario de pago.");
 
             //Status Fields
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.OrderStatus", "Estado de la Transaccion");
@@ -944,7 +429,7 @@ namespace Nop.Plugin.Payments.TodoPago
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PushNotifyStates", "PushNotifyStates");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Refunded", "Refunded");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Refunds", "Refunds");
-            
+
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.FeeAmount", "FeeAmount");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.TaxAmount", "TaxAmount");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.ServiceChargeAmount", "ServiceChargeAmount");
@@ -957,6 +442,24 @@ namespace Nop.Plugin.Payments.TodoPago
 
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.IdContracargo", "IdContracargo");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.FechaNotificacionCuenta", "FechaNotificacionCuenta");
+
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.TEA", "TEA");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CFT", "CFT");
+
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.RELEASESTATUS", "RELEASESTATUS");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.RELEASEDATETIME", "RELEASEDATETIME");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PHONENUMBER", "PHONENUMBER");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.ADDRESS", "ADDRESS");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.POSTALCODE", "POSTALCODE");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CUSTOMERID", "CUSTOMERID");
+            //this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PRODUCTCODE", "PRODUCTCODE");
+            //this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PRODUCTDESCRIPTION", "PRODUCTDESCRIPTION");
+            //this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PRODUCTNAME", "PRODUCTNAME");
+            //this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.QUANTITY", "QUANTITY");
+            //this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PRODUCTSKU", "PRODUCTSKU");
+            //this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.UNITPRICE", "UNITPRICE");
+            //this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.TOTALAMOUNT", "TOTALAMOUNT");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Items", "Items");
 
             _contex.Install();
             base.Install();
@@ -993,6 +496,12 @@ namespace Nop.Plugin.Payments.TodoPago
 
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Chart");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Chart.Hint");
+
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.GoogleMaps");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.GoogleMaps.Hint");
+
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Hibrido");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Hibrido.Hint");
 
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User.Hint");
@@ -1067,11 +576,28 @@ namespace Nop.Plugin.Payments.TodoPago
 
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.IdContracargo");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.FechaNotificacionCuenta");
-            
+
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.TEA");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CFT");
+
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.RELEASESTATUS");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.RELEASEDATETIME");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PHONENUMBER");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.ADDRESS");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.POSTALCODE");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.CUSTOMERID");
+            //this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PRODUCTCODE");
+            //this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PRODUCTDESCRIPTION");
+            //this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PRODUCTNAME");
+            //this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.QUANTITY");
+            //this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.PRODUCTSKU");
+            //this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.UNITPRICE");
+            //this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.TOTALAMOUNT");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Items");
+
             _contex.Uninstall();
             base.Uninstall();
         }
-
 
         /// <summary>
         /// Gets a value indicating whether capture is supported
@@ -1135,6 +661,9 @@ namespace Nop.Plugin.Payments.TodoPago
         {
             get
             {
+                //if (_todoPagoPaymentSettings.Hibrido)
+                //    return PaymentMethodType.Standard;
+                //else
                 return PaymentMethodType.Redirection;
             }
         }

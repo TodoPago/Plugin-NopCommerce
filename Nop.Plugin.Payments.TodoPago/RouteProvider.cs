@@ -45,15 +45,22 @@ namespace Nop.Plugin.Payments.TodoPago
 
             //Order Status
             routes.MapRoute("Plugin.Payments.TodoPago.OrderStatusTP",
-                 "Plugins/PaymentTodoPago/OrderStatusTP/{id}/{message}",
-                 new { controller = "PaymentTodoPago", action = "OrderStatusTP", id = "", message = "" },
+                 "Plugins/PaymentTodoPago/OrderStatusTP/{id}",
+                 new { controller = "PaymentTodoPago", action = "OrderStatusTP", id = ""},
+                 new[] { "Nop.Plugin.Payments.TodoPago.Controllers" }
+            );
+
+            //Order Status Message
+            routes.MapRoute("Plugin.Payments.TodoPago.OrderStatusMessage",
+                 "Plugins/PaymentTodoPago/OrderStatusMessage",
+                 new { controller = "PaymentTodoPago", action = "OrderStatusMessage"},
                  new[] { "Nop.Plugin.Payments.TodoPago.Controllers" }
             );
 
             //Order Status Fail
-            routes.MapRoute("Plugin.Payments.TodoPago.OrderStatusFailTP",
-                 "Plugins/PaymentTodoPago/OrderStatusFailTP/{id}/{message}",
-                 new { controller = "PaymentTodoPago", action = "OrderStatusFailTP", id = "", message = "" },
+            routes.MapRoute("Plugin.Payments.TodoPago.HybridForm",
+                 "Plugins/PaymentTodoPago/HybridForm/{id}/{publicRequestKey}",
+                 new { controller = "PaymentTodoPago", action = "HybridForm", id = "", publicRequestKey = "" },
                  new[] { "Nop.Plugin.Payments.TodoPago.Controllers" }
             );
         }

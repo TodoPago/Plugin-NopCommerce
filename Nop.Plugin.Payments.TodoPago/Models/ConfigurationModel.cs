@@ -58,6 +58,14 @@ namespace Nop.Plugin.Payments.TodoPago.Models
         public bool Chart { get; set; }
         public bool Chart_OverrideForStore { get; set; }
 
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.GoogleMaps")]
+        public bool GoogleMaps { get; set; }
+        public bool GoogleMaps_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.Hibrido")]
+        public bool Hibrido { get; set; }
+        public bool Hibrido_OverrideForStore { get; set; }
+
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.User")]
         public string UserDev { get; set; }
         public bool UserDev_OverrideForStore { get; set; }

@@ -8,14 +8,14 @@ using Nop.Plugin.Payments.TodoPago.Domain;
 
 namespace Nop.Plugin.Payments.TodoPago.Data
 {
-    public class TodoPagoTransactionObjectContex : DbContext, IDbContext
+    public class TodoPagoAddressBookObjectContex : DbContext, IDbContext
     {
-        public TodoPagoTransactionObjectContex(string nameOrConnectionString)
+        public TodoPagoAddressBookObjectContex(string nameOrConnectionString)
             : base(nameOrConnectionString) { }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
-            modelBuilder.Configurations.Add(new TodoPagoTransactionRecordMap());
+            modelBuilder.Configurations.Add(new TodoPagoAddressBookRecordMap());
             //disable EdmMetadata generation
             //modelBuilder.Conventions.Remove<IncludeMetadataConvention>();
             base.OnModelCreating(modelBuilder);
@@ -33,7 +33,7 @@ namespace Nop.Plugin.Payments.TodoPago.Data
 
         public void Install()
         {
-            this.DropPluginTable("todopago_transaction");
+            this.DropPluginTable("todopago_address_book");
             //create the table
             var dbScript = CreateDatabaseScript();
             Database.ExecuteSqlCommand(dbScript);
@@ -42,7 +42,7 @@ namespace Nop.Plugin.Payments.TodoPago.Data
 
         public void Uninstall()
         {
-            var tableName = this.GetTableName<TodoPagoTransactionRecord>();
+            var tableName = this.GetTableName<TodoPagoAddressBookRecord>();
             this.DropPluginTable(tableName);
         }
         
