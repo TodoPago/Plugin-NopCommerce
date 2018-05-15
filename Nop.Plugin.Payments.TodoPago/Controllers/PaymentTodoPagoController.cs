@@ -168,6 +168,8 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
             var processor = _paymentService.LoadPaymentMethodBySystemName("Payments.TodoPago") as TodoPagoPaymentProcessor;
             if (processor == null || !processor.IsPaymentMethodActive(_paymentSettings) || !processor.PluginDescriptor.Installed)
                 ViewBag.getDescriptionError = "El plugin se encuentra desactivado, actívelo para continuar.";
+            else
+                ViewBag.versionTodoPago = processor.PluginDescriptor.Version;
 
             Double.TryParse(Nop.Core.NopVersion.CurrentVersion, out version);
 
@@ -564,6 +566,8 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
 
             model.URL_OK = storeLocation + "Plugins/PaymentTodoPago/OrderReturn?ordenId=" + id;
             model.URL_ERROR = storeLocation + "Plugins/PaymentTodoPago/OrderStatusTP/" + id;
+
+            model.Amount = order.OrderTotal;
 
             result = View("~/Plugins/Payments.TodoPago/Views/PaymentTodoPago/HybridForm.cshtml", model);
 

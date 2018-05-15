@@ -65,9 +65,6 @@ namespace Nop.Plugin.Payments.TodoPago.Models
             
             SaveSendAuthorizeRequest(responseSar, postProcessPaymentRequest.Order.Id, paramSarSereal, paramSarPayLoadSereal);
 
-            if (googleMapsIsActive && addressHasBeenUpdated) //Activado Google
-                UpdateGoogleMapsData();
-
             return GetSarRedirectURL(postProcessPaymentRequest, responseSar);
         }
 
@@ -182,7 +179,7 @@ namespace Nop.Plugin.Payments.TodoPago.Models
             if ((addressBillingRecord == null || addressShippingRecord == null) || (addressBillingRecord.hash != addressBillingHash || addressShippingRecord.hash != addressShippingHash))
             {
                 updateAddress = true;
-                connector.SetGoogleClient(new Google());
+                //connector.SetGoogleClient(new Google());
             }
 
             if (addressBillingRecord.hash == addressBillingHash)
@@ -230,41 +227,6 @@ namespace Nop.Plugin.Payments.TodoPago.Models
             todoPagoTransactionDto.publicRequestKey = publicRequestKey;
 
             todoPagoBusinessService.insertTodoPagoTransactionRecord(todoPagoTransactionDto);
-        }
-
-        private void UpdateGoogleMapsData()
-        {
-            Google clientGoogle = connector.GetGoogleClient();
-
-            if (clientGoogle != null)
-            {
-                if (addressBillingRecord == null || addressBillingRecord.hash != addressBillingHash)
-                {
-                    TodoPagoAddressBookDto todoPagoBillingDto = new TodoPagoAddressBookDto();
-                    todoPagoBillingDto.hash = addressBillingHash;
-                    todoPagoBillingDto.street = clientGoogle.GetFinalAddress()["billing"].Street;
-                    todoPagoBillingDto.state = clientGoogle.GetFinalAddress()["billing"].State;
-                    todoPagoBillingDto.city = clientGoogle.GetFinalAddress()["billing"].City;
-                    todoPagoBillingDto.country = clientGoogle.GetFinalAddress()["billing"].Country;
-                    todoPagoBillingDto.postal = clientGoogle.GetFinalAddress()["billing"].PostalCode;
-                    todoPagoBusinessService.insertTodoPagoAddressBookRecord(todoPagoBillingDto);
-                }
-
-                if (addressBillingHash != addressShippingHash)
-                {
-                    if (addressShippingRecord == null || addressShippingRecord.hash != addressShippingHash)
-                    {
-                        TodoPagoAddressBookDto todoPagoShippingDto = new TodoPagoAddressBookDto();
-                        todoPagoShippingDto.hash = addressShippingHash;
-                        todoPagoShippingDto.street = clientGoogle.GetFinalAddress()["shipping"].Street;
-                        todoPagoShippingDto.state = clientGoogle.GetFinalAddress()["shipping"].State;
-                        todoPagoShippingDto.city = clientGoogle.GetFinalAddress()["shipping"].City;
-                        todoPagoShippingDto.country = clientGoogle.GetFinalAddress()["shipping"].Country;
-                        todoPagoShippingDto.postal = clientGoogle.GetFinalAddress()["shipping"].PostalCode;
-                        todoPagoBusinessService.insertTodoPagoAddressBookRecord(todoPagoShippingDto);
-                    }
-                }
-            }
         }
 
         private string GetSarRedirectURL(PostProcessPaymentRequest postProcessPaymentRequest, Dictionary<string, object> result)
