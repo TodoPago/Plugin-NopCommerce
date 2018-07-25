@@ -379,7 +379,8 @@
         console.log('Stop loading...');
         var peiCbx = $("#peiCbx");
         var peiRow = $("#peibox");
-        var tokenPeiTxt = $("#tokenPeiTxt");;
+        var tokenPeiTxt = $("#tokenPeiTxt");
+        var billetera = '@Model.Billetera';
 
         if (document.getElementById('peiLbl').style.display === "inline-block") {
             $("#peibox").css('display', 'table-cell');
@@ -397,6 +398,11 @@
             peiRow.hide('fast');
             peiRow.css("display", "none");
             $("#peiCbx").prop("checked", false);
+        }
+
+        if ($("#billeteraFrame").length === 0 && billetera === "T") {
+            $("#btn_Billetera").click();
+            $(".billetera_tp").css("display", "none");
         }
     }
 

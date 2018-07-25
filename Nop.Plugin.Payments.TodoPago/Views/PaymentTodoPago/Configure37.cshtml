@@ -12,14 +12,12 @@
     <table class="adminContent">
         <tr>
             <td colspan="2">
-                <b>@T("Plugins.Payments.TodoPago.Notes")</b>
+                <b>Todo Pago</b>
             </td>
         </tr>
         <tr>
             <td colspan="2">
                 <p>
-                    <em>Todo Pago</em><br /><br />
-
                     <h4><p style="color:red;">@ViewBag.getDescriptionError</p></h4>
                     <h4><p><div style="color:red;" class="github-message"></div></p></h4>
                     <em>Medio de pago Todo Pago</em><br /><br />
@@ -102,6 +100,42 @@
             <td class="adminData">
                 @Html.EditorFor(model => model.Hibrido)
                 @Html.ValidationMessageFor(model => model.Hibrido)
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <p>
+                    <br />
+                    <em>Billetera en Checkout</em><br />
+                    <em>Seleccione el banner que desea mostrar para billetera</em><br /><br />
+                </p>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="adminTitle" style="text-align: right;">
+                @Html.RadioButton("UrlBannerBilletera", "https://todopago.com.ar/sites/todopago.com.ar/files/billetera/pluginstarjeta1.jpg", (Model.UrlBannerBilletera == "https://todopago.com.ar/sites/todopago.com.ar/files/billetera/pluginstarjeta1.jpg"), new { id = "billetera-banner-1" })
+            </td>
+            <td class="adminData">
+                <label for="billetera-banner-1"><img src="https://todopago.com.ar/sites/todopago.com.ar/files/billetera/pluginstarjeta1.jpg" height="50" /></label>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="adminTitle" style="text-align: right;">
+                @Html.RadioButton("UrlBannerBilletera", "https://todopago.com.ar/sites/todopago.com.ar/files/billetera/pluginstarjeta2.jpg", (Model.UrlBannerBilletera == "https://todopago.com.ar/sites/todopago.com.ar/files/billetera/pluginstarjeta2.jpg"), new { id = "billetera-banner-2" })
+            </td>
+            <td class="adminData">
+                <label for="billetera-banner-2"><img src="https://todopago.com.ar/sites/todopago.com.ar/files/billetera/pluginstarjeta2.jpg" height="50" /></label>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="adminTitle" style="text-align: right;">
+                @Html.RadioButton("UrlBannerBilletera", "https://todopago.com.ar/sites/todopago.com.ar/files/billetera/pluginstarjeta3.jpg", (Model.UrlBannerBilletera == "https://todopago.com.ar/sites/todopago.com.ar/files/billetera/pluginstarjeta3.jpg"), new { id = "billetera-banner-3" })
+            </td>
+            <td class="adminData">
+                <label for="billetera-banner-3"><img src="https://todopago.com.ar/sites/todopago.com.ar/files/billetera/pluginstarjeta3.jpg" height="50" /></label>
             </td>
         </tr>
         <tr>

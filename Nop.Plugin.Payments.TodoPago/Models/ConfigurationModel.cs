@@ -66,6 +66,10 @@ namespace Nop.Plugin.Payments.TodoPago.Models
         public bool Hibrido { get; set; }
         public bool Hibrido_OverrideForStore { get; set; }
 
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.UrlBannerBilletera")]
+        public string UrlBannerBilletera { get; set; }
+        public bool UrlBannerBilletera_OverrideForStore { get; set; }
+
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.User")]
         public string UserDev { get; set; }
         public bool UserDev_OverrideForStore { get; set; }

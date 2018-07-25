@@ -72,6 +72,7 @@ namespace Nop.Plugin.Payments.TodoPago.Models
                 headers.Add("Authorization", authorization);
                 this.security = _todoPagoPaymentSettings.SecurityDeveloper;
                 this.merchant = _todoPagoPaymentSettings.MerchantDeveloper;
+
                 this.connector = new TPConnector(TPConnector.developerEndpoint, headers);
             }
         }

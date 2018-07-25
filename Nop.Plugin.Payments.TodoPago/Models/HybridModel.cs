@@ -28,5 +28,8 @@ namespace Nop.Plugin.Payments.TodoPago.Models
 
         [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.Amount")]
         public decimal Amount { get; set; }
+
+        [NopResourceDisplayName("Plugins.Payments.TodoPago.Fields.IsBilletera")]
+        public string Billetera { get; set; }
     }
 }

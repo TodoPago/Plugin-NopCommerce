@@ -315,7 +315,7 @@ namespace Nop.Plugin.Payments.TodoPago
             _settingService.SaveSetting(settings);
 
             //locales
-            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Notes", "Descripcion de TodoPago");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Notes", "Descripcion de Todo Pago");
 
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Titulo", "Titulo");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Titulo.Hint", "Titulo que el usuario ve durante el checkout.");
@@ -355,6 +355,9 @@ namespace Nop.Plugin.Payments.TodoPago
 
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Hibrido", "¿Desea utilizar el formulario híbrido?");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Hibrido.Hint", "Verifica la dirección con Google");
+
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.UrlBannerBilletera", "UrlBannerBilletera");
+            this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.UrlBannerBilletera.Hint", "Url del banner a mostrar en billetera.");
 
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User", "User");
             this.AddOrUpdatePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User.Hint", "User de Todo Pago.");
@@ -502,6 +505,9 @@ namespace Nop.Plugin.Payments.TodoPago
 
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Hibrido");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.Hibrido.Hint");
+
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.UrlBannerBilletera");
+            this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.UrlBannerBilletera.Hint");
 
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User");
             this.DeletePluginLocaleResource("Plugins.Payments.TodoPago.Fields.User.Hint");

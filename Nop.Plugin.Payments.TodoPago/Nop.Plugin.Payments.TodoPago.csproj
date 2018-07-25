@@ -109,6 +109,7 @@
     <Compile Include="Models\HybridModel.cs" />
     <Compile Include="Models\OrderStatusTPModel.cs" />
     <Compile Include="Models\Payment.cs" />
+    <Compile Include="Models\PaymentInfoModel.cs" />
     <Compile Include="Models\Refund.cs" />
     <Compile Include="Models\Status.cs" />
     <Compile Include="Models\StatusModel.cs" />

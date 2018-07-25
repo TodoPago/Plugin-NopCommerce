@@ -33,6 +33,12 @@ namespace Nop.Plugin.Payments.TodoPago
 
         public bool Hibrido { get; set; }
 
+        // Billetera
+
+        public string UrlBannerBilletera { get; set; }
+
+        // Credentials
+
         public string User { get; set; }
 
         public string Password { get; set; }

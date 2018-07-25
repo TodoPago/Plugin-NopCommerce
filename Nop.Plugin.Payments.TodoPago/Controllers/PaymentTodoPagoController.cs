@@ -97,6 +97,8 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
 
                 Hibrido = todoPagoPaymentSettings.Hibrido,
 
+                UrlBannerBilletera = todoPagoPaymentSettings.UrlBannerBilletera,
+
                 User = todoPagoPaymentSettings.User,
                 Password = todoPagoPaymentSettings.Password,
 
@@ -123,6 +125,9 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
                 ActiveStoreScopeConfiguration = storeScope
             };
 
+            if (String.IsNullOrEmpty(model.UrlBannerBilletera))
+                model.UrlBannerBilletera = "https://todopago.com.ar/sites/todopago.com.ar/files/billetera/pluginstarjeta1.jpg";
+
             if (storeScope > 0)
             {
 
@@ -143,6 +148,8 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
                 model.GoogleMaps_OverrideForStore = _settingService.SettingExists(todoPagoPaymentSettings, x => x.GoogleMaps, storeScope);
 
                 model.Hibrido_OverrideForStore = _settingService.SettingExists(todoPagoPaymentSettings, x => x.Hibrido, storeScope);
+
+                model.UrlBannerBilletera_OverrideForStore = _settingService.SettingExists(todoPagoPaymentSettings, x => x.UrlBannerBilletera, storeScope);
 
                 model.User_OverrideForStore = _settingService.SettingExists(todoPagoPaymentSettings, x => x.User, storeScope);
                 model.Password_OverrideForStore = _settingService.SettingExists(todoPagoPaymentSettings, x => x.Password, storeScope);
@@ -237,6 +244,8 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
 
             todoPagoPaymentSettings.Hibrido = model.Hibrido;
 
+            todoPagoPaymentSettings.UrlBannerBilletera = model.UrlBannerBilletera;
+
             todoPagoPaymentSettings.User = model.User;
             todoPagoPaymentSettings.Password = model.Password;
 
@@ -322,6 +331,11 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
             else if (storeScope > 0)
                 _settingService.DeleteSetting(todoPagoPaymentSettings, x => x.Hibrido, storeScope);
 
+            if (model.UrlBannerBilletera_OverrideForStore || storeScope == 0)
+                _settingService.SaveSetting(todoPagoPaymentSettings, x => x.UrlBannerBilletera, storeScope, false);
+            else if (storeScope > 0)
+                _settingService.DeleteSetting(todoPagoPaymentSettings, x => x.UrlBannerBilletera, storeScope);
+
             if (model.User_OverrideForStore || storeScope == 0)
                 _settingService.SaveSetting(todoPagoPaymentSettings, x => x.User, storeScope, false);
             else if (storeScope > 0)
@@ -394,7 +408,13 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
         public ActionResult PaymentInfo()
         {
             //FORMULARIO EXTERNO, REDIRECCION
-            ActionResult result = View("~/Plugins/Payments.TodoPago/Views/PaymentTodoPago/PaymentInfo.cshtml");
+            var storeScope = GetActiveStoreScopeConfiguration(_storeService, _workContext);
+            var todoPagoPaymentSettings = _settingService.LoadSetting<TodoPagoPaymentSettings>(storeScope);
+
+            PaymentInfoModel pim = new PaymentInfoModel();
+            pim.UrlBilletera = todoPagoPaymentSettings.UrlBannerBilletera;
+
+            ActionResult result = View("~/Plugins/Payments.TodoPago/Views/PaymentTodoPago/PaymentInfo.cshtml", pim);
 
             return result;
         }
@@ -411,6 +431,7 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
         {
             var paymentInfo = new ProcessPaymentRequest();
             paymentInfo = new ProcessPaymentRequest();
+            _httpContext.Session["BilleteraHíbrido"] = form["tp_form_hib"];
             return paymentInfo;
         }
 
@@ -441,7 +462,7 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
             {
                 Dictionary<string, object> responseGaa = processor.TodoPagoSecondStep(answerKey, order);
                 int statusCode = (int)responseGaa[TODOPAGO_STATUS_CODE];
-                
+
                 if (statusCode == -1)
                 {
                     return RedirectToRoute("CheckoutCompleted", new { orderId = order.Id });
@@ -568,6 +589,11 @@ namespace Nop.Plugin.Payments.TodoPago.Controllers
             model.URL_ERROR = storeLocation + "Plugins/PaymentTodoPago/OrderStatusTP/" + id;
 
             model.Amount = order.OrderTotal;
+
+            if (_httpContext.Session["BilleteraHíbrido"] != null)
+                model.Billetera = (string)_httpContext.Session["BilleteraHíbrido"];
+            else
+                model.Billetera = "F";
 
             result = View("~/Plugins/Payments.TodoPago/Views/PaymentTodoPago/HybridForm.cshtml", model);
 
